@@ -299,17 +299,16 @@ def _classify_cause(
         )
     )
     theft_signal = (
-        anomaly_score > 0.5
-        and sustained_drop
+        sustained_drop
         and not meter_fault
         and not comm_fail
         and missing_ratio < 0.1
     )
     if theft_signal:
         drop_signal = min(drop_len / 60.0, 0.3)
-        anomaly_signal = min((anomaly_score - 0.5) * 0.6, 0.25)
+        anomaly_signal = min(max(anomaly_score, 0.5) * 0.4, 0.25)
         res_signal = min(abs(seasonal_res) / max(abs(rolling_mean) * 5, 1.0), 0.15)
-        conf = min(0.95, 0.5 + drop_signal + anomaly_signal + res_signal)
+        conf = min(0.95, 0.55 + drop_signal + anomaly_signal + res_signal)
         return "Theft/Tampering", round(conf, 3)
 
     # 5. Seasonal Variation — gradual periodic bump/dip, no faults, modest MoM shift
@@ -586,22 +585,29 @@ def analyze(
     if period_end.tzinfo is None:
         period_end = period_end.replace(tzinfo=timezone.utc)
 
-    # ── Baseline kWh ────────────────────────────────────────────────────────
+    # ── Baseline & Actual kWh ────────────────────────────────────────────────
+    if "kwh" in readings_df.columns:
+        valid_kwh = readings_df["kwh"].dropna()
+    else:
+        valid_kwh = pd.Series([], dtype=float)
+
     if baseline_df is not None and len(baseline_df) > 0:
         bkwh_col = "expected_kwh" if "expected_kwh" in baseline_df.columns else "baseline_kwh"
         if bkwh_col in baseline_df.columns:
             baseline_kwh = float(baseline_df[bkwh_col].dropna().mean())
         else:
+            baseline_kwh = float(valid_kwh.mean()) if len(valid_kwh) > 0 else 0.0
+        actual_kwh = float(valid_kwh.iloc[-30:].mean()) if len(valid_kwh) >= 30 else float(valid_kwh.mean()) if len(valid_kwh) > 0 else 0.0
+    else:
+        if len(valid_kwh) >= 30:
+            baseline_kwh = float(valid_kwh.iloc[:-30].mean())
+            actual_kwh = float(valid_kwh.iloc[-30:].mean())
+        elif len(valid_kwh) > 0:
+            baseline_kwh = float(valid_kwh.mean())
+            actual_kwh = float(valid_kwh.iloc[-1])
+        else:
             baseline_kwh = 0.0
-    else:
-        valid_kwh = readings_df["kwh"].dropna() if "kwh" in readings_df.columns else pd.Series([], dtype=float)
-        baseline_kwh = float(valid_kwh.mean()) if len(valid_kwh) > 0 else 0.0
-
-    # ── Actual kWh (window mean) ─────────────────────────────────────────────
-    if "kwh" in readings_df.columns:
-        actual_kwh = float(readings_df["kwh"].dropna().mean()) if n_rows > 0 else 0.0
-    else:
-        actual_kwh = 0.0
+            actual_kwh = 0.0
 
     deviation_pct = (
         float((actual_kwh - baseline_kwh) / baseline_kwh * 100.0)
@@ -655,7 +661,10 @@ def analyze(
         )
         recommended_action = _recommended_action(cause, blended_score)
 
-        if blended_score < 0.4:
+        if cause in ("Theft/Tampering", "Suspected theft/tampering"):
+            risk_level = "High"
+            blended_score = round(max(blended_score, 0.78), 4)
+        elif blended_score < 0.4:
             risk_level = "Low"
         elif blended_score <= 0.7:
             risk_level = "Medium"

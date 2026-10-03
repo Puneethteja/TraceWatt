@@ -39,7 +39,13 @@ def render_report(case, consumer, baseline) -> bytes:
 """
     if baseline:
         for b in baseline[:5]:
-            report_text += f"    {b.ts}: {b.expected_kwh} kWh\n"
+            ts_val = b.get("ts") if isinstance(b, dict) else getattr(b, "ts", "")
+            kwh_val = (
+                b.get("expected_kwh", b.get("baseline_kwh", ""))
+                if isinstance(b, dict)
+                else getattr(b, "expected_kwh", getattr(b, "baseline_kwh", ""))
+            )
+            report_text += f"    {ts_val}: {kwh_val} kWh\n"
         if len(baseline) > 5:
             report_text += "    ... and more\n"
     else:

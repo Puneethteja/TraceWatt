@@ -18,6 +18,8 @@ import {
   getRiskDistribution,
   getRecentAlerts,
 } from '../api/client';
+import ExecutiveLossMatrix from '../components/ExecutiveLossMatrix';
+import SubstationGridHeatmap from '../components/SubstationGridHeatmap';
 
 function TrendTooltip({ active, payload, label }) {
   if (active && payload && payload.length) {
@@ -150,6 +152,12 @@ export default function DashboardHome() {
           {error}
         </div>
       )}
+
+      {/* Executive Financial Revenue Loss Matrix */}
+      <ExecutiveLossMatrix summary={summary} />
+
+      {/* Substation & Feeder Grid NTL Heatmap */}
+      <SubstationGridHeatmap />
 
       {/* 1. Summary Cards (4 Cards) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

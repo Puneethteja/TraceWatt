@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getConsumers } from '../api/client';
 import ExportMenu from '../components/ExportMenu';
+import FieldInspectionModal from '../components/FieldInspectionModal';
 
 export default function ConsumersList() {
   const navigate = useNavigate();
@@ -12,6 +13,8 @@ export default function ConsumersList() {
   const [riskFilter, setRiskFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [feederFilter, setFeederFilter] = useState('All');
+  const [dispatchConsumer, setDispatchConsumer] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -205,12 +208,13 @@ export default function ConsumersList() {
                   <th className="py-2.5 px-4 uppercase tracking-wider text-[11px] font-semibold">Cause</th>
                   <th className="py-2.5 px-4 uppercase tracking-wider text-[11px] font-semibold">Estimated Loss</th>
                   <th className="py-2.5 px-4 uppercase tracking-wider text-[11px] font-semibold">Status</th>
+                  <th className="py-2.5 px-4 uppercase tracking-wider text-[11px] font-semibold text-right">Audit Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredConsumers.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-8 text-center text-xs text-gray-500">
+                    <td colSpan="8" className="py-8 text-center text-xs text-gray-500">
                       No consumers found matching selected filters.
                     </td>
                   </tr>
@@ -252,6 +256,14 @@ export default function ConsumersList() {
                           {item.status || '-'}
                         </span>
                       </td>
+                      <td className="py-2.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => setDispatchConsumer(item)}
+                          className="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded text-xs font-semibold shadow-2xs transition-colors"
+                        >
+                          ⚡ Dispatch
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -260,6 +272,24 @@ export default function ConsumersList() {
           </div>
         )}
       </div>
+
+      {/* Field Inspection Audit Dispatch Modal */}
+      {dispatchConsumer && (
+        <FieldInspectionModal
+          consumer={dispatchConsumer}
+          onClose={() => setDispatchConsumer(null)}
+          onActionLogged={(details) => {
+            setToastMessage(`⚡ Field inspection ticket logged for ${details.consumerId}`);
+            setTimeout(() => setToastMessage(''), 3500);
+          }}
+        />
+      )}
+
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-lg shadow-lg text-xs font-semibold border border-slate-700 animate-bounce">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

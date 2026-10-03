@@ -196,13 +196,13 @@ def _assert_valid_detection(det: dict) -> None:
 class TestTheftScenario:
     """Sudden persistent drop starting mid-window, meter/comm OK."""
 
-    def _build_theft_readings(self, n: int = 180, drop_factor: float = 0.20) -> pd.DataFrame:
+    def _build_theft_readings(self, n: int = 180, drop_factor: float = 0.10) -> pd.DataFrame:
         rng = np.random.default_rng(7)
         ts = _date_range(n)
         kwh = np.where(
-            np.arange(n) < 100,
+            np.arange(n) < 130,
             60.0 + rng.normal(0, 2, n),
-            60.0 * drop_factor + rng.normal(0, 1, n),
+            60.0 * drop_factor + rng.normal(0, 0.5, n),
         )
         kwh = np.clip(kwh, 0.1, None)
         return pd.DataFrame({

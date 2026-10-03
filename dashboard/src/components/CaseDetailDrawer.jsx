@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getConsumerDetail, getCaseDetail, updateCaseStatus } from '../api/client';
+import FieldInspectionModal from './FieldInspectionModal';
 
 const STATUS_OPTIONS = [
   'New',
@@ -20,6 +21,21 @@ export default function CaseDetailDrawer({ consumerId, onClose }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [history, setHistory] = useState([]);
+  const [showInspectionModal, setShowInspectionModal] = useState(false);
+
+  const handleActionLogged = (actionDetails) => {
+    setCurrentStatus('Inspection Scheduled');
+    setHistory((prev) => [
+      {
+        id: Date.now(),
+        text: `⚡ ${actionDetails.actionType} scheduled with ${actionDetails.team} (${actionDetails.priority})`,
+        time: 'Just now',
+      },
+      ...prev,
+    ]);
+    setSaveMessage('Field inspection ticket created!');
+    setTimeout(() => setSaveMessage(''), 3000);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -278,16 +294,23 @@ export default function CaseDetailDrawer({ consumerId, onClose }) {
                   type="button"
                   onClick={handleUpdate}
                   disabled={isUpdating}
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150 disabled:opacity-50 cursor-pointer"
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-150 disabled:opacity-50 cursor-pointer"
                 >
                   {isUpdating ? 'Updating...' : 'Update Status'}
                 </button>
-                {saveMessage && (
-                  <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                    {saveMessage}
-                  </span>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowInspectionModal(true)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white rounded-md px-3 py-1.5 text-xs font-semibold shadow-xs transition-colors duration-150 cursor-pointer flex items-center space-x-1"
+                >
+                  <span>⚡ Schedule Field Audit</span>
+                </button>
               </div>
+              {saveMessage && (
+                <div className="text-xs font-medium text-green-600 dark:text-green-400 mt-1">
+                  {saveMessage}
+                </div>
+              )}
             </div>
 
             {/* Section 4: Case History */}
@@ -307,6 +330,15 @@ export default function CaseDetailDrawer({ consumerId, onClose }) {
           </div>
         )}
       </div>
+
+      {/* Field Inspection Audit Dispatch Modal */}
+      {showInspectionModal && (
+        <FieldInspectionModal
+          consumer={{ consumer_id: consumerId, name: consumer?.name }}
+          onClose={() => setShowInspectionModal(false)}
+          onActionLogged={handleActionLogged}
+        />
+      )}
     </>
   );
 }
