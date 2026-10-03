@@ -269,7 +269,7 @@ export default function Landing() {
           <span className="brand-mark">ϟ</span>TraceWatt
         </Link>
         <span>Energy intelligence. Human judgment.</span>
-        <Link to="/console/health">System Diagnostics ↗</Link>
+        <Link to="/console/health">System health ↗</Link>
       </footer>
     </div>
   );
