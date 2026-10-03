@@ -66,7 +66,7 @@ export function Overview() {
       </div>
       <div className="two-col">
         <Panel
-          title="Energy Loss & Anomaly Investigation Console"
+          title="Consumption monitor"
           aside={<Link to="/console/consumption">Explore ↗</Link>}
         >
           <Resource resource={consumers} empty="No consumers found">
@@ -825,7 +825,7 @@ export function System({ pipeline = false }) {
   return (
     <>
       <PageHead
-        title={pipeline ? "System pipeline" : "System Diagnostics"}
+        title={pipeline ? "System pipeline" : "System health"}
         description="Observable state, with clear boundaries around unavailable telemetry."
       />
       <Panel title="Backend connection">

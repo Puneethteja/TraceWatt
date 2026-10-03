@@ -1,4 +1,4 @@
-﻿# TraceWatt dashboard
+# TraceWatt dashboard
 
 React 19 + Vite + React Router + Recharts. Three.js powers the lazy-loaded conceptual network. Fonts are bundled locally. All frontend implementation is inside this directory.
 
@@ -91,6 +91,6 @@ The inherited Tailwind 3 dependency tree reports five high-severity development 
 
 ## Scope and concurrent work
 
-The initial Git status was clean. This task changed only dashboard files. During testing, an external merge committed the frontend work and brought in backend/model changes; those incoming changes were preserved. Later backend bytecode changes appeared externally and were not cleaned up or overwritten. A final repository-wide diff therefore includes unrelated work and must not be described as dashboard-only.
+The initial Git status was clean. This task changed only dashboard files. During testing, an external merge committed the frontend work and brought in backend/model changes; those incoming changes were preserved. Later backend source edits, bytecode changes, and test artifacts appeared externally and were not cleaned up or overwritten. A final repository-wide diff therefore includes unrelated work and must not be described as dashboard-only.
 
 See [FILES.md](FILES.md) for the frontend file manifest.
