@@ -21,13 +21,7 @@ const groups = [
       ["baselines", "Baselines", "≋"],
     ],
   ],
-  [
-    "SYSTEM",
-    [
-      ["pipeline", "Pipeline", "⇢"],
-      ["health", "Health", "♡"],
-    ],
-  ],
+
 ];
 export default function Layout({ alerts = [], clearAlerts }) {
   const [open, setOpen] = useState(false),
@@ -97,18 +91,7 @@ export default function Layout({ alerts = [], clearAlerts }) {
             </span>
           </div>
           <div className="actions">
-            <span
-              className={`connection ${health.data && !health.error ? "connected" : ""}`}
-            >
-              <span className="dot" />
-              {health.loading
-                ? "Connecting"
-                : health.error
-                  ? "Backend unavailable"
-                  : health.data?.status === "ok"
-                    ? "API connected"
-                    : "Check API status"}
-            </span>
+
             <button
               aria-label={dark ? "Use light appearance" : "Use dark appearance"}
               onClick={theme}

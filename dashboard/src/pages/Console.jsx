@@ -28,8 +28,8 @@ export function Overview() {
   return (
     <>
       <PageHead
-        title="A clearer view of your grid."
-        description="Follow the signal. Understand the context. Investigate with evidence."
+        title="Energy Loss & Anomaly Investigation"
+        description="DETECT → EXPLAIN → QUANTIFY → PRIORITIZE → ACT"
       >
         <Link className="button primary" to="/console/simulation">
           Launch simulation ↗
@@ -38,12 +38,21 @@ export function Overview() {
 
       <div className="stats">
         <Stat
-          label="Consumers in API sample"
+          label="Consumers Monitored"
           value={consumers.error ? null : consumers.data?.length}
-          note="First 1,000 · not a system total"
+          note="Actively ingested meters"
         />
         <Stat
-          label="Open cases"
+          label="High-Risk Cases"
+          value={
+            cases.error
+              ? null
+              : cases.data?.filter((c) => c.risk_level === "High").length
+          }
+          note="Immediate attention required"
+        />
+        <Stat
+          label="Open Investigations"
           value={
             cases.error
               ? null
@@ -51,17 +60,19 @@ export function Overview() {
                   (c) => !["Closed", "False Alarm"].includes(c.status),
                 ).length
           }
-          note="From case export API"
+          note="Total active cases"
         />
         <Stat
-          label="Alerts returned"
-          value={alerts.error ? null : alerts.data?.length}
-          note="Latest 1,000 maximum"
-        />
-        <Stat
-          label="Backend status"
-          value={health.error ? "Unavailable" : "Online & Connected"}
-          note="ML models active"
+          label="Estimated Unexplained Loss"
+          value={
+            cases.error
+              ? null
+              : "₹" +
+                Math.round(cases.data?.filter(
+                  (c) => !["Closed", "False Alarm"].includes(c.status),
+                ).reduce((sum, c) => sum + (c.estimated_loss || 0), 0) || 0).toLocaleString()
+          }
+          note="From open high-priority cases"
         />
       </div>
       <div className="two-col">
@@ -89,31 +100,44 @@ export function Overview() {
           </Resource>
         </Panel>
         <Panel
-          title="Investigation queue"
-          aside={<Link to="/console/cases">All cases ↗</Link>}
+          title="WHAT NEEDS YOUR ATTENTION?"
+          aside={<Link to="/console/cases">Investigation Queue ↗</Link>}
         >
-          <Resource resource={cases} empty="No cases available">
-            {(rows) => (
-              <>
-                <div className="status-counts">
-                  {statuses.map((s) => (
-                    <div key={s}>
-                      <span>{s}</span>
-                      <strong>
-                        {rows.filter((c) => c.status === s).length}
-                      </strong>
-                    </div>
+          <Resource resource={cases} empty="No cases require immediate attention">
+            {(rows) => {
+              const urgent = rows
+                .filter((c) => c.risk_level === "High" && !["Closed", "False Alarm"].includes(c.status))
+                .sort((a, b) => (b.priority_rank || 0) - (a.priority_rank || 0))
+                .slice(0, 3);
+              if (urgent.length === 0) return <Empty title="No high-risk cases require attention." />;
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {urgent.map((c) => (
+                    <Link
+                      key={c.id}
+                      to={"/console/consumers/" + encodeURIComponent(c.consumer_id)}
+                      style={{
+                        padding: '16px',
+                        borderBottom: '1px solid var(--border)',
+                        color: 'inherit',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <strong style={{ fontSize: '1.1em' }}>{c.consumer_id}</strong>
+                        <Badge>{c.risk_level}</Badge>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '0.9em' }}>
+                        <div><span className="muted">Probable cause:</span> <br/><strong>{c.cause}</strong></div>
+                        <div><span className="muted">Estimated loss:</span> <br/><strong>₹{(c.estimated_loss || 0).toLocaleString()}</strong></div>
+                        <div><span className="muted">Confidence:</span> <br/><strong>{Math.round((c.confidence || 0) * 100)}%</strong></div>
+                        <div><span className="muted">Recommended:</span> <br/><strong>{c.recommended_action}</strong></div>
+                      </div>
+                    </Link>
                   ))}
                 </div>
-                {rows.some((c) => !statuses.includes(c.status)) && (
-                  <p className="notice">
-                    Other backend statuses:{" "}
-                    {rows.filter((c) => !statuses.includes(c.status)).length}{" "}
-                    (preserved as returned).
-                  </p>
-                )}
-              </>
-            )}
+              );
+            }}
           </Resource>
         </Panel>
       </div>

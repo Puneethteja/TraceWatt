@@ -1,0 +1,149 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\adity\Desktop\dy\TraceWatt
+plugins: anyio-4.11.0, langsmith-0.12.4, zarr-3.3.0
+collected 23 items
+
+backend\tests\test_engine_scenarios.py EEEEEEEEEEEEEEEEEEEEEEE           [100%]
+
+=================================== ERRORS ====================================
+________ ERROR at setup of TestTheftScenario.test_cause_classification ________
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_________ ERROR at setup of TestTheftScenario.test_high_anomaly_score _________
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_______ ERROR at setup of TestTheftScenario.test_evidence_mentions_drop _______
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_ ERROR at setup of TestTheftScenario.test_counter_evidence_mentions_no_fault _
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_ ERROR at setup of TestTheftScenario.test_recommended_action_mentions_inspection _
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+___ ERROR at setup of TestMeterMalfunctionScenario.test_cause_zero_variant ____
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+__ ERROR at setup of TestMeterMalfunctionScenario.test_cause_erratic_variant __
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_ ERROR at setup of TestMeterMalfunctionScenario.test_evidence_mentions_fault _
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_____ ERROR at setup of TestCommFailureScenario.test_cause_classification _____
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+__ ERROR at setup of TestCommFailureScenario.test_evidence_mentions_missing ___
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_ ERROR at setup of TestCommFailureScenario.test_counter_evidence_mentions_no_meter_fault _
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+__ ERROR at setup of TestLegitimateAbnormalScenario.test_cause_drop_variant ___
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+__ ERROR at setup of TestLegitimateAbnormalScenario.test_cause_step_increase __
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+__ ERROR at setup of TestSeasonalVariationScenario.test_cause_classification __
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_____ ERROR at setup of TestSeasonalVariationScenario.test_no_fault_flags _____
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_______ ERROR at setup of TestNormalScenario.test_cause_classification ________
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_________ ERROR at setup of TestNormalScenario.test_low_anomaly_score _________
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+__________ ERROR at setup of TestNormalScenario.test_risk_level_low ___________
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+______ ERROR at setup of TestNormalScenario.test_estimated_loss_is_small ______
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_ ERROR at setup of TestRequiresReviewScenario.test_short_history_requires_review _
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_ ERROR at setup of TestRequiresReviewScenario.test_requires_review_low_confidence _
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_ ERROR at setup of TestRequiresReviewScenario.test_zero_readings_requires_review _
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+_ ERROR at setup of TestRequiresReviewScenario.test_evidence_mentions_insufficient _
+backend\tests\test_engine_scenarios.py:122: in patch_models
+    original_extract = ea.extract_features
+                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'engine.analyze' has no attribute 'extract_features'
+=========================== short test summary info ===========================
+ERROR backend/tests/test_engine_scenarios.py::TestTheftScenario::test_cause_classification
+ERROR backend/tests/test_engine_scenarios.py::TestTheftScenario::test_high_anomaly_score
+ERROR backend/tests/test_engine_scenarios.py::TestTheftScenario::test_evidence_mentions_drop
+ERROR backend/tests/test_engine_scenarios.py::TestTheftScenario::test_counter_evidence_mentions_no_fault
+ERROR backend/tests/test_engine_scenarios.py::TestTheftScenario::test_recommended_action_mentions_inspection
+ERROR backend/tests/test_engine_scenarios.py::TestMeterMalfunctionScenario::test_cause_zero_variant
+ERROR backend/tests/test_engine_scenarios.py::TestMeterMalfunctionScenario::test_cause_erratic_variant
+ERROR backend/tests/test_engine_scenarios.py::TestMeterMalfunctionScenario::test_evidence_mentions_fault
+ERROR backend/tests/test_engine_scenarios.py::TestCommFailureScenario::test_cause_classification
+ERROR backend/tests/test_engine_scenarios.py::TestCommFailureScenario::test_evidence_mentions_missing
+ERROR backend/tests/test_engine_scenarios.py::TestCommFailureScenario::test_counter_evidence_mentions_no_meter_fault
+ERROR backend/tests/test_engine_scenarios.py::TestLegitimateAbnormalScenario::test_cause_drop_variant
+ERROR backend/tests/test_engine_scenarios.py::TestLegitimateAbnormalScenario::test_cause_step_increase
+ERROR backend/tests/test_engine_scenarios.py::TestSeasonalVariationScenario::test_cause_classification
+ERROR backend/tests/test_engine_scenarios.py::TestSeasonalVariationScenario::test_no_fault_flags
+ERROR backend/tests/test_engine_scenarios.py::TestNormalScenario::test_cause_classification
+ERROR backend/tests/test_engine_scenarios.py::TestNormalScenario::test_low_anomaly_score
+ERROR backend/tests/test_engine_scenarios.py::TestNormalScenario::test_risk_level_low
+ERROR backend/tests/test_engine_scenarios.py::TestNormalScenario::test_estimated_loss_is_small
+ERROR backend/tests/test_engine_scenarios.py::TestRequiresReviewScenario::test_short_history_requires_review
+ERROR backend/tests/test_engine_scenarios.py::TestRequiresReviewScenario::test_requires_review_low_confidence
+ERROR backend/tests/test_engine_scenarios.py::TestRequiresReviewScenario::test_zero_readings_requires_review
+ERROR backend/tests/test_engine_scenarios.py::TestRequiresReviewScenario::test_evidence_mentions_insufficient
+============================= 23 errors in 2.79s ==============================

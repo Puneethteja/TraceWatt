@@ -336,25 +336,16 @@ export default function Simulation() {
           <div className="notice" role="status">
             <strong>
               {result.ack.stored
-                ? "Reading stored successfully."
-                : "Reading not stored. A reading with this consumer and timestamp may already exist."}
+                ? "Reading received by grid monitoring system."
+                : "Reading not recorded. A reading with this consumer and timestamp may already exist."}
             </strong>
             <p>
               Consumer: {result.payload.consumer_id} · {result.payload.ts}
-            </p>
-            <p>
-              Stored: {String(result.ack.stored)} · Queued:{" "}
-              {String(result.ack.queued)}
-            </p>
-            <p>
-              ML analysis is active. Queue acknowledgement confirms initial
-              ingestion before analysis pipeline.
             </p>
           </div>
         ) : !busy && !error ? (
           <p className="muted">No reading has been sent in this session.</p>
         ) : null}
-        <Pipeline ack={result?.ack} health={!!result} />
       </Panel>
       <Panel
         title="Live consumption from backend"
