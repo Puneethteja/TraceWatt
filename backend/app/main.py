@@ -26,4 +26,11 @@ async def startup_event():
 async def health_check():
     return {"status": "ok"}
 
+from .routers import readings, consumers, cases, feeders, export, alerts
+
 app.include_router(readings.router)
+app.include_router(consumers.router)
+app.include_router(cases.router)
+app.include_router(feeders.router)
+app.include_router(alerts.router)
+app.include_router(export.router)
