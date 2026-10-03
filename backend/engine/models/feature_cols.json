@@ -1,0 +1,10 @@
+[
+  "missing_ratio",
+  "zero_reading_ratio",
+  "rolling_mean_30d",
+  "rolling_std_30d",
+  "mom_change_pct",
+  "drop_length",
+  "peer_deviation",
+  "seasonal_residual"
+]

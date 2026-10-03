@@ -256,9 +256,9 @@ def _fmt_size(path: Path) -> str:
 
 
 if __name__ == "__main__":
-    file_a = "data/raw/data.csv"
-    file_b = "data/raw/Electricity_Theft_Data.csv"
-    out    = "data/processed"
+    file_a = "C:\\Users\\DELL\\TraceWatt\\backend\\data\\raw\\data.csv"
+    file_b = "C:\\Users\\DELL\\TraceWatt\\backend\\data\\raw\\Electricity_Theft_Data.csv"
+    out    = "C:\\Users\\DELL\\TraceWatt\\backend\\data\\processed"
 
     if len(sys.argv) == 4:
         file_a, file_b, out = sys.argv[1], sys.argv[2], sys.argv[3]

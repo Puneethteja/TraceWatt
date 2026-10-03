@@ -27,8 +27,8 @@ class Detection(BaseModel):
     baseline_kwh: float
     actual_kwh: float
     deviation_pct: float
-    evidence: str
-    counter_evidence: str
+    evidence: Any
+    counter_evidence: Any
     recommended_action: str
 
 class CaseOut(BaseModel):
