@@ -94,7 +94,6 @@ class Alert(Base):
 class FeederSummary(Base):
     __tablename__ = "feeder_summary"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-<<<<<<< HEAD
     feeder_id = Column(String, ForeignKey("feeders.id"), nullable=True)
     transformer_id = Column(String, nullable=True)
     window_start = Column(String, nullable=True)
@@ -109,22 +108,6 @@ class FeederSummary(Base):
     unexplained_loss_pct = Column(Float, nullable=True, default=0.0)
     cluster_score = Column(Float, nullable=True, default=0.0)
     cluster_flag = Column(Integer, nullable=True, default=0)
-=======
-    feeder_id = Column(String, ForeignKey("feeders.id"), nullable=False)
-    ts = Column(DateTime, nullable=False)
-    total_consumers = Column(Integer, nullable=False)
-    high_risk_consumers = Column(Integer, nullable=False)
-    total_consumption = Column(Float, nullable=False, default=0.0)
-    avg_loss_pct = Column(Float, nullable=False, default=0.0)
-    transformer_id = Column(String, nullable=True)
-    window_start = Column(String, nullable=True)
-    window_end = Column(String, nullable=True)
-    energy_in_kwh = Column(Float, nullable=True)
-    energy_metered_kwh = Column(Float, nullable=True)
-    unexplained_loss_pct = Column(Float, nullable=True)
-    cluster_score = Column(Float, nullable=True)
-    cluster_flag = Column(Integer, nullable=True)
->>>>>>> 533fc623c44f4b3e0f731bea39c6c27377d94866
 
 class PipelineMetric(Base):
     __tablename__ = "pipeline_metrics"

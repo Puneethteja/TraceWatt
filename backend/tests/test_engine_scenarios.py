@@ -216,11 +216,7 @@ class TestTheftScenario:
         rng = np.random.default_rng(7)
         ts = _date_range(n)
         kwh = np.where(
-<<<<<<< HEAD
             np.arange(n) < 130,
-=======
-            np.arange(n) < 20,
->>>>>>> 533fc623c44f4b3e0f731bea39c6c27377d94866
             60.0 + rng.normal(0, 2, n),
             60.0 * drop_factor + rng.normal(0, 0.5, n),
         )
