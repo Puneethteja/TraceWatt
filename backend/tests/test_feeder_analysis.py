@@ -1,4 +1,4 @@
-﻿"""
+"""
 backend/tests/test_feeder_analysis.py
 =====================================
 Phase-4 unit tests for backend/services/feeder_analysis.py.
@@ -46,23 +46,24 @@ def seeded_session(sqlite_session):
       - TX_01: 2 consumers (C_1, C_2). Input = 100 kWh, sum = 80 kWh.
       - TX_02: 1 consumer (C_3). Input = 50 kWh, sum = 48 kWh.
     """
+    from datetime import datetime
     session = sqlite_session
 
     session.add_all([
-        Consumer(consumer_id="C_1", transformer_id="TX_01"),
-        Consumer(consumer_id="C_2", transformer_id="TX_01"),
-        Consumer(consumer_id="C_3", transformer_id="TX_02"),
+        Consumer(id="C_1", transformer_id="TX_01", category="Residential", feeder_id="F1"),
+        Consumer(id="C_2", transformer_id="TX_01", category="Residential", feeder_id="F1"),
+        Consumer(id="C_3", transformer_id="TX_02", category="Residential", feeder_id="F1"),
     ])
 
     session.add_all([
-        TransformerReading(transformer_id="TX_01", ts="2024-01-15", energy_in_kwh=100.0),
-        TransformerReading(transformer_id="TX_02", ts="2024-01-15", energy_in_kwh=50.0),
+        TransformerReading(transformer_id="TX_01", ts=datetime(2024, 1, 15), kwh=100.0),
+        TransformerReading(transformer_id="TX_02", ts=datetime(2024, 1, 15), kwh=50.0),
     ])
 
     session.add_all([
-        Reading(consumer_id="C_1", ts="2024-01-15", kwh=40.0),
-        Reading(consumer_id="C_2", ts="2024-01-15", kwh=40.0),
-        Reading(consumer_id="C_3", ts="2024-01-15", kwh=48.0),
+        Reading(consumer_id="C_1", ts=datetime(2024, 1, 15), kwh=40.0),
+        Reading(consumer_id="C_2", ts=datetime(2024, 1, 15), kwh=40.0),
+        Reading(consumer_id="C_3", ts=datetime(2024, 1, 15), kwh=48.0),
     ])
 
     session.commit()
