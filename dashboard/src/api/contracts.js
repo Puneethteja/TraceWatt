@@ -22,3 +22,21 @@ export function joinSeries(actual = [], baseline = []) {
   return [...rows.entries()].sort((a,b) => a[0]-b[0]).map(([,v]) => v);
 }
 
+/**
+ * Existing backend Detection contract. This is a type description, not a detector.
+ * CaseOut exposes only a subset; unavailable fields must remain absent.
+ * @typedef {Object} Detection
+ * @property {string} consumer_id
+ * @property {number} anomaly_score
+ * @property {string} risk_level
+ * @property {string} cause
+ * @property {number} confidence
+ * @property {string} period_start
+ * @property {string} period_end
+ * @property {number} baseline_kwh
+ * @property {number} actual_kwh
+ * @property {number} deviation_pct
+ * @property {string} evidence
+ * @property {string} counter_evidence
+ * @property {string} recommended_action
+ */

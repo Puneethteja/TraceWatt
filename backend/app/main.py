@@ -3,10 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 from .config import ALLOWED_ORIGINS
 from .db import init_db
-from .routers import readings
+from .seed import seed_database
+from .services.mqtt_service import mqtt_service
+from .routers import readings, consumers, cases, feeders, export, alerts, dashboard
 from .services.pipeline import process_queue
 
-app = FastAPI(title="TraceWatt API")
+app = FastAPI(title="TraceWatt API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,15 +21,27 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     init_db()
-    # Start the pipeline background task
+    seed_database()
+    # Start MQTT background loop
+    mqtt_service.start()
+    # Start pipeline queue worker
     asyncio.create_task(process_queue())
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    mqtt_service.stop()
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "app": "TraceWatt API",
+        "database": "synced",
+        "fuzzy_engine": "active",
+        "mqtt_connected": mqtt_service.is_connected
+    }
 
-from .routers import readings, consumers, cases, feeders, export, alerts
-
+app.include_router(dashboard.router)
 app.include_router(readings.router)
 app.include_router(consumers.router)
 app.include_router(cases.router)

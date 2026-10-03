@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 from datetime import datetime
 
-from ..db import list_consumers, get_consumption, get_baseline
+from ..db import list_consumers, get_consumer_detail, get_consumption, get_baseline
 from ..schemas import ConsumerSummary, ConsumptionPoint, BaselinePoint
 
 router = APIRouter(prefix="/consumers", tags=["consumers"])
@@ -18,6 +18,13 @@ def get_consumers(
 ):
     return list_consumers(risk=risk, feeder=feeder, transformer=transformer, category=category, limit=limit, offset=offset)
 
+@router.get("/{consumer_id}", response_model=ConsumerSummary)
+def get_single_consumer(consumer_id: str):
+    consumer = get_consumer_detail(consumer_id)
+    if not consumer:
+        raise HTTPException(status_code=404, detail="Consumer not found")
+    return consumer
+
 @router.get("/{consumer_id}/consumption", response_model=List[ConsumptionPoint])
 def get_consumer_consumption(
     consumer_id: str,
@@ -28,13 +35,11 @@ def get_consumer_consumption(
     readings = get_consumption(consumer_id=consumer_id, start=start, end=end, resample=resample)
     if not readings:
         raise HTTPException(status_code=404, detail="No consumption data found for this consumer")
-    
-    # Return mapping to ConsumptionPoint
-    return [{"ts": r.ts, "kwh": r.kwh if r.kwh is not None else 0.0} for r in readings]
+    return readings
 
 @router.get("/{consumer_id}/baseline", response_model=List[BaselinePoint])
 def get_consumer_baseline(consumer_id: str):
     baselines = get_baseline(consumer_id)
     if not baselines:
         raise HTTPException(status_code=404, detail="No baseline data found for this consumer")
-    return [{"ts": b.ts, "expected_kwh": b.expected_kwh} for b in baselines]
+    return baselines

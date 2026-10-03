@@ -19,10 +19,31 @@ export default function GridScene({ pulse = 0, conceptual = false, consumer = nu
     const grid = new THREE.GridHelper(20, 24, 0x30594d, 0x173d34); grid.position.y=-.15; group.add(grid);
     const positions = [[-5,0,0],[-2.6,0,0],[0,0,0],[2.8,0,-3],[2.8,0,0],[2.8,0,3],[5.2,0,0]];
     const material = new THREE.MeshStandardMaterial({ color:0x73c99b, metalness:.35, roughness:.4 });
+    const detailMaterial = new THREE.MeshStandardMaterial({color:0x417d61,metalness:.45,roughness:.45});
     positions.forEach((p,i) => {
       const h = i===0 ? 2.8 : i===1 ? 1.6 : i===6 ? 2.1 : .8;
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(i===1?1.3:.8,h,.8),material);
       mesh.position.set(p[0],h/2,p[2]); group.add(mesh);
+      if(i===1) {
+        for(let fin=0;fin<6;fin++) {
+          const cooling=new THREE.Mesh(new THREE.BoxGeometry(.09,1.15,1.05),detailMaterial);
+          cooling.position.set(p[0]-.5+fin*.2,.85,p[2]);group.add(cooling);
+        }
+        for(const x of [-.35,.35]) {
+          const insulator=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.45,8),detailMaterial);
+          insulator.position.set(p[0]+x,1.82,p[2]);group.add(insulator);
+        }
+      }
+      if(i>2&&i<6) {
+        const roof=new THREE.Mesh(new THREE.ConeGeometry(.72,.48,4),detailMaterial);
+        roof.rotation.y=Math.PI/4;roof.position.set(p[0],1.04,p[2]);group.add(roof);
+      }
+      if(i===6) {
+        for(let row=0;row<4;row++) {
+          const slot=new THREE.Mesh(new THREE.BoxGeometry(.57,.07,.03),detailMaterial);
+          slot.position.set(p[0],.55+row*.35,p[2]+.42);group.add(slot);
+        }
+      }
       const base = new THREE.Mesh(new THREE.BoxGeometry(1.6,.13,1.6), new THREE.MeshStandardMaterial({color:0x214e3f}));
       base.position.set(...p); group.add(base);
       if(i>2 && i<6) {
@@ -39,11 +60,12 @@ export default function GridScene({ pulse = 0, conceptual = false, consumer = nu
     const path = [new THREE.Vector3(2.8,.7,3),new THREE.Vector3(2.8,.7,3.46),new THREE.Vector3(0,.3,0),new THREE.Vector3(5.2,1,0)];
     const resize = new ResizeObserver(()=>{ const w=element.clientWidth,h=element.clientHeight; renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); }); resize.observe(element);
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let frame, visible=true;
+    let frame, visible=true, lastFrame=0;
     const observer=new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;}); observer.observe(element);
     function animate(t) {
       frame=requestAnimationFrame(animate);
-      if(document.hidden || !visible) return;
+      if(document.hidden || !visible || t-lastFrame<33) return;
+      lastFrame=t;
       group.rotation.y = reduced ? 0 : Math.sin(t*.00014)*.08;
       const active=conceptual || t-trigger.current<2600;
       particle.visible=active && !reduced;

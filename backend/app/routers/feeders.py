@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException
-from typing import List, Optional
+from typing import List, Optional, Any
 
-from ..db import list_feeders, get_feeder_summary
+from ..db import list_feeders, get_feeder_summary, get_feeder_losses
 from ..schemas import FeederOut, FeederSummaryOut
 
 router = APIRouter(prefix="/feeders", tags=["feeders"])
@@ -15,7 +15,16 @@ def get_feeder_summaries(
     transformer_id: Optional[str] = Query(None, description="Filter by transformer ID"),
     feeder_id: Optional[str] = Query(None, description="Filter by feeder ID")
 ):
-    # db.py get_feeder_summary actually only supports feeder_id and transformer_id depending on the implementation
-    # Let's pass both and see if they are used
-    summaries = get_feeder_summary(transformer_id=transformer_id, feeder_id=feeder_id)
-    return summaries
+    return get_feeder_summary(transformer_id=transformer_id, feeder_id=feeder_id)
+
+@router.get("/{feeder_id}", response_model=FeederOut)
+def get_single_feeder(feeder_id: str):
+    feeders = list_feeders()
+    for f in feeders:
+        if f["id"] == feeder_id or f.get("feeder_id") == feeder_id:
+            return f
+    raise HTTPException(status_code=404, detail="Feeder not found")
+
+@router.get("/{feeder_id}/losses")
+def get_feeder_losses_route(feeder_id: str):
+    return get_feeder_losses(feeder_id)

@@ -13,3 +13,5 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 
+@media(max-width:800px){.sidebar{visibility:hidden}.sidebar.is-open{visibility:visible}}
+.workflow article:hover{background:#ecf0e6}.feeder-card:hover{border-color:#9db293;box-shadow:0 4px 14px #223c2410}
