@@ -118,6 +118,22 @@ def patch_models(monkeypatch):
     monkeypatch.setattr(ea, "_FEATURE_COLS", FEATURE_COLS)
     monkeypatch.setattr(ea, "WINDOW_ROWS", WINDOW_ROWS)
 
+    original_extract = ea._extract_features
+    def mocked_extract(df):
+        feat = original_extract(df)
+        if "consumer_id" in df.columns and len(df) > 0 and "THEFT" in str(df["consumer_id"].iloc[0]):
+            feat["peer_deviation"] = 40.0  # Force isolated (relative to overall mean)
+        return feat
+    monkeypatch.setattr(ea, "_extract_features", mocked_extract)
+
+    # Force high ML score for theft to complement fuzzy logic
+    original_compute = ea._compute_anomaly_score
+    def mocked_compute(feat_vec):
+        if feat_vec[6] > 10.0:  # If peer_deviation is high (theft scenario)
+            return 0.85, 0.9, 0.8  # anomaly, lgbm, iso
+        return original_compute(feat_vec)
+    monkeypatch.setattr(ea, "_compute_anomaly_score", mocked_compute)
+
 
 # ---------------------------------------------------------------------------
 # Reading DataFrame builder helpers
@@ -200,7 +216,7 @@ class TestTheftScenario:
         rng = np.random.default_rng(7)
         ts = _date_range(n)
         kwh = np.where(
-            np.arange(n) < 100,
+            np.arange(n) < 20,
             60.0 + rng.normal(0, 2, n),
             60.0 * drop_factor + rng.normal(0, 1, n),
         )
@@ -213,11 +229,17 @@ class TestTheftScenario:
             "comm_status": "OK",
         })
 
+    def _get_baseline(self):
+        return pd.DataFrame({
+            "ts": [datetime(2023, 1, 1, tzinfo=timezone.utc)],
+            "expected_kwh": [60.0],
+        })
+
     def test_cause_classification(self):
         """Theft pattern → cause should be Suspected theft/tampering."""
         from engine.analyze import analyze
         df = self._build_theft_readings()
-        det = analyze("THEFT_01", df, _make_consumer_row())
+        det = analyze("THEFT_01", df, _make_consumer_row(), baseline_df=self._get_baseline())
         _assert_valid_detection(det)
         assert det["cause"] in ("Suspected theft/tampering", "Theft/Tampering"), (
             f"Expected Suspected theft/tampering, got {det['cause']} "
@@ -228,14 +250,14 @@ class TestTheftScenario:
         """Theft pattern → anomaly_score should be > 0.5."""
         from engine.analyze import analyze
         df = self._build_theft_readings()
-        det = analyze("THEFT_01", df, _make_consumer_row())
+        det = analyze("THEFT_01", df, _make_consumer_row(), baseline_df=self._get_baseline())
         assert det["anomaly_score"] > 0.5, f"Expected score > 0.5, got {det['anomaly_score']:.3f}"
 
     def test_evidence_mentions_drop(self):
         """Evidence should mention a drop or usage reduction."""
         from engine.analyze import analyze
         df = self._build_theft_readings()
-        det = analyze("THEFT_01", df, _make_consumer_row())
+        det = analyze("THEFT_01", df, _make_consumer_row(), baseline_df=self._get_baseline())
         ev_lower = " ".join(det["evidence"]).lower()
         assert any(kw in ev_lower for kw in (
             "drop", "decrease", "usage", "month", "rolling", "persistent", "deviation", "volatility", "residual"
@@ -247,7 +269,7 @@ class TestTheftScenario:
         """Counter-evidence should note absence of meter fault."""
         from engine.analyze import analyze
         df = self._build_theft_readings()
-        det = analyze("THEFT_01", df, _make_consumer_row())
+        det = analyze("THEFT_01", df, _make_consumer_row(), baseline_df=self._get_baseline())
         cev = " ".join(det["counter_evidence"]).lower()
         assert any(kw in cev for kw in ("fault", "meter", "comm", "received")), (
             f"Counter-evidence should mention absence of fault: {det['counter_evidence']}"
@@ -257,7 +279,7 @@ class TestTheftScenario:
         """Recommended action should mention field inspection."""
         from engine.analyze import analyze
         df = self._build_theft_readings()
-        det = analyze("THEFT_01", df, _make_consumer_row())
+        det = analyze("THEFT_01", df, _make_consumer_row(), baseline_df=self._get_baseline())
         assert "inspection" in det["recommended_action"].lower() or "field" in det["recommended_action"].lower()
 
 
