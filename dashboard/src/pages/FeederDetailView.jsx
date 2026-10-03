@@ -165,7 +165,7 @@ export default function FeederDetailView() {
         </div>
 
         <div className="text-xs text-gray-500 dark:text-slate-400 font-mono text-left sm:text-right">
-          Grid Telemetry: Live
+          Grid Telemetry: Operational
         </div>
       </div>
 

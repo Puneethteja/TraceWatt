@@ -54,7 +54,7 @@ export default function ScenarioLab() {
           Scenario Lab
         </h1>
         <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-          Inject synthetic events into the live IoT simulator (PRD USP #5 - Simulation Playground)
+          Inject synthetic events into the IoT simulation playground
         </p>
       </div>
 

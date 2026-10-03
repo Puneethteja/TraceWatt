@@ -618,53 +618,59 @@ def analyze(
 
     feat_vec = np.array([feats.get(c, 0.0) for c in _FEATURE_COLS], dtype=np.float64)
 
-    # ── Anomaly scoring ──────────────────────────────────────────────────────
+    # ── ML Model Anomaly Scoring (LightGBM + IsoForest) ─────────────────────
     anomaly_score, lgbm_score, iso_score = _compute_anomaly_score(feat_vec)
 
-    # ── Risk level ───────────────────────────────────────────────────────────
-    if anomaly_score < 0.4:
-        risk_level = "Low"
-    elif anomaly_score <= 0.7:
-        risk_level = "Medium"
+    # ── Fuzzy Logic Inference Engine ──────────────────────────────────────────
+    from .fuzzy_logic import fuzzy_engine
+
+    drop_ratio = float(np.clip(abs(deviation_pct) / 100.0, 0.0, 1.0)) if deviation_pct < 0 else 0.0
+    comm_error = 1.0 if _comm_failed(readings_df) else float(feats.get("missing_ratio", 0.0))
+    meter_fault_val = 1.0 if _any_fault(readings_df) else float(feats.get("zero_reading_ratio", 0.0))
+    peer_dev_val = float(np.clip(abs(feats.get("peer_deviation", 0.0)) / max(feats.get("_overall_mean", 1.0), 1.0), 0.0, 1.0))
+
+    fuzzy_res = fuzzy_engine.evaluate(
+        drop_ratio=drop_ratio,
+        comm_error=comm_error,
+        meter_fault=meter_fault_val,
+        peer_deviation=peer_dev_val
+    )
+
+    # Hybrid blend: 50% ML Model (LightGBM + IsoForest) + 50% Fuzzy Logic Inference
+    blended_score = round(float(0.5 * anomaly_score + 0.5 * fuzzy_res["anomaly_score"]), 4)
+
+    # Determine final cause & risk level
+    if fuzzy_res["anomaly_score"] > 0.60:
+        cause = fuzzy_res["probable_cause"]
+        risk_level = fuzzy_res["risk_level"]
+        confidence = fuzzy_res["confidence"]
+        recommended_action = fuzzy_res["recommended_action"]
+        evidence_list = fuzzy_res["evidence"]
+        counter_ev_list = fuzzy_res["counter_evidence"]
     else:
-        risk_level = "High"
+        # Fallback to rule engine / ML
+        cause, confidence = _classify_cause(feats, blended_score, lgbm_score, readings_df, n_rows)
+        evidence_list, counter_ev_list = _build_evidence(
+            feats, cause, readings_df, baseline_kwh, actual_kwh, deviation_pct, lgbm_score, iso_score
+        )
+        recommended_action = _recommended_action(cause, blended_score)
 
-    # ── Cause classification ─────────────────────────────────────────────────
-    cause, confidence = _classify_cause(
-        feats, anomaly_score, lgbm_score, readings_df, n_rows
-    )
+        if blended_score < 0.4:
+            risk_level = "Low"
+        elif blended_score <= 0.7:
+            risk_level = "Medium"
+        else:
+            risk_level = "High"
 
-    # ── Low-confidence fallback ──────────────────────────────────────────────
-    # Theft/Tampering and Meter Malfunction use signal-based confidence and are
-    # intentionally exempt from this fallback gate.
-    _exempt_from_fallback = (
-        "Normal", "Requires Review", "Communication Failure",
-        "Theft/Tampering", "Meter Malfunction",
-    )
-    if confidence < 0.5 and cause not in _exempt_from_fallback:
-        cause = "Requires Review"
-        confidence = max(confidence, 0.35)
-
-    # ── Explainability ──────────────────────────────────────────────────────
-    evidence_list, counter_ev_list = _build_evidence(
-        feats, cause, readings_df,
-        baseline_kwh, actual_kwh, deviation_pct,
-        lgbm_score, iso_score,
-    )
-
-    # ── Loss & recommended action ────────────────────────────────────────────
     from app.services.loss import compute_loss, priority_score as _ps
     estimated_loss = compute_loss(baseline_kwh, actual_kwh, tariff)
-    p_score = _ps(anomaly_score, confidence, estimated_loss)
+    p_score = _ps(blended_score, confidence, estimated_loss)
 
-    # Translate internal cause label → user-facing display string
     display_cause = _CAUSE_DISPLAY.get(cause, cause)
-
-    recommended_action = _recommended_action(cause, anomaly_score)
 
     return {
         "consumer_id": consumer_id,
-        "anomaly_score": round(anomaly_score, 4),
+        "anomaly_score": round(blended_score, 4),
         "risk_level": risk_level,
         "cause": display_cause,
         "confidence": round(confidence, 4),
@@ -673,10 +679,11 @@ def analyze(
         "baseline_kwh": round(baseline_kwh, 4),
         "actual_kwh": round(actual_kwh, 4),
         "deviation_pct": round(deviation_pct, 4),
-        "evidence": evidence_list if evidence_list else ["Insufficient data for evidence"],
+        "evidence": evidence_list if evidence_list else ["Fuzzy logic anomaly signals evaluated"],
         "counter_evidence": counter_ev_list if counter_ev_list else ["No counter-evidence available"],
         "recommended_action": recommended_action,
         "estimated_loss": round(estimated_loss, 4),
+        "fuzzy_memberships": fuzzy_res.get("fuzzy_memberships"),
         "priority_rank": None,  # filled in by rank_cases() in analyze_all()
         "_priority_score": round(p_score, 6),  # internal, used for ranking
     }

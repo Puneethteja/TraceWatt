@@ -372,7 +372,7 @@ export default function DashboardHome() {
               <h2 className="text-sm font-semibold text-gray-900 tracking-tight">
                 Recent Alerts
               </h2>
-              <p className="text-xs text-gray-500">Live IoT anomaly feed</p>
+              <p className="text-xs text-gray-500">Recent anomaly notifications</p>
             </div>
             <Link
               to="/alerts"

@@ -32,20 +32,23 @@ class Detection(BaseModel):
     recommended_action: str
 
 class CaseOut(BaseModel):
-    id: int
+    id: Optional[int] = None
+    case_id: Optional[str] = None
     consumer_id: str
     status: str
     risk_level: str
     cause: str
     anomaly_score: float
-    confidence: float
-    first_flagged_at: datetime
-    last_updated_at: datetime
+    confidence: Optional[float] = 0.90
+    first_flagged_at: Optional[Any] = None
+    last_updated: Optional[str] = None
+    last_updated_at: Optional[Any] = None
     note: Optional[str] = None
-    evidence: Optional[str] = None
-    counter_evidence: Optional[str] = None
+    evidence: Optional[Any] = None
+    counter_evidence: Optional[Any] = None
     recommended_action: Optional[str] = None
-    estimated_loss: Optional[float] = None
+    estimated_loss: Optional[float] = 0.0
+    priority_rank: Optional[int] = None
     priority: Optional[float] = None
 
 class CaseStatusUpdate(BaseModel):
@@ -57,18 +60,30 @@ class ConsumerSummary(BaseModel):
     category: str
     feeder_id: str
     transformer_id: str
+    meter_id: Optional[str] = None
     risk_level: Optional[str] = None
     status: Optional[str] = None
+    cause: Optional[str] = None
     anomaly_score: Optional[float] = None
-    last_reading_ts: Optional[datetime] = None
+    confidence: Optional[float] = None
+    estimated_loss: Optional[float] = None
+    priority_rank: Optional[int] = None
+    tariff: Optional[str] = None
+    sanctioned_load_kw: Optional[float] = None
 
 class ConsumptionPoint(BaseModel):
-    ts: datetime
+    ts: Optional[Any] = None
+    date: Optional[str] = None
     kwh: float
+    baseline_kwh: Optional[float] = None
+    voltage: Optional[float] = None
+    current: Optional[float] = None
+    power_kw: Optional[float] = None
 
 class BaselinePoint(BaseModel):
-    ts: datetime
+    ts: Optional[Any] = None
     expected_kwh: float
+    baseline_kwh: Optional[float] = None
 
 class CaseEventOut(BaseModel):
     id: int
@@ -84,11 +99,19 @@ class AlertOut(BaseModel):
     cause: str
     message: str
     is_read: bool
-    created_at: datetime
+    ts: Optional[str] = None
+    created_at: Optional[Any] = None
 
 class FeederOut(BaseModel):
     id: str
+    feeder_id: Optional[str] = None
     name: str
+    transformer_count: Optional[int] = 0
+    consumer_count: Optional[int] = 0
+    high_risk_consumers: Optional[int] = 0
+    total_unexplained_loss_pct: Optional[float] = 0.0
+    unexplained_loss_pct: Optional[float] = 0.0
+    cluster_flag: Optional[bool] = False
 
 class FeederSummaryOut(BaseModel):
     feeder_id: str

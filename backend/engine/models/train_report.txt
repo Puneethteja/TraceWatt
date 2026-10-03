@@ -37,5 +37,5 @@
 7. ARTIFACTS SERIALIZATION
    - Destination Path              : C:\Users\DELL\TraceWatt\backend\engine\models
    - Saved Artifacts               : lgbm_model.pkl, calibrator.pkl, iso_forest.pkl, scaler.pkl, feature_cols.json
-   - Training Time Elapsed         : 6.47 seconds
+   - Training Time Elapsed         : 6.39 seconds
 =================================================================
