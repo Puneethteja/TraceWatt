@@ -98,8 +98,16 @@ class FeederSummary(Base):
     ts = Column(DateTime, nullable=False)
     total_consumers = Column(Integer, nullable=False)
     high_risk_consumers = Column(Integer, nullable=False)
-    total_consumption = Column(Float, nullable=False)
-    avg_loss_pct = Column(Float, nullable=False)
+    total_consumption = Column(Float, nullable=False, default=0.0)
+    avg_loss_pct = Column(Float, nullable=False, default=0.0)
+    transformer_id = Column(String, nullable=True)
+    window_start = Column(String, nullable=True)
+    window_end = Column(String, nullable=True)
+    energy_in_kwh = Column(Float, nullable=True)
+    energy_metered_kwh = Column(Float, nullable=True)
+    unexplained_loss_pct = Column(Float, nullable=True)
+    cluster_score = Column(Float, nullable=True)
+    cluster_flag = Column(Integer, nullable=True)
 
 class PipelineMetric(Base):
     __tablename__ = "pipeline_metrics"

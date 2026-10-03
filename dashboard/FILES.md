@@ -1,0 +1,50 @@
+# Frontend file manifest
+
+Compared with the clean repository at the start of this task. Incoming concurrent changes are not attributed to this task. All paths below are inside dashboard/.
+
+- `dashboard/.env`
+- `dashboard/.env.example`
+- `dashboard/.env.production`
+- `dashboard/.gitignore`
+- `dashboard/FILES.md`
+- `dashboard/README.md`
+- `dashboard/index.html`
+- `dashboard/package-lock.json`
+- `dashboard/package.json`
+- `dashboard/playwright.config.js`
+- `dashboard/src/App.css` (removed; superseded legacy/mock implementation)
+- `dashboard/src/App.jsx`
+- `dashboard/src/api/client.js`
+- `dashboard/src/api/contracts.js`
+- `dashboard/src/api/format.js`
+- `dashboard/src/api/mockData.js` (removed; superseded legacy/mock implementation)
+- `dashboard/src/components/CaseDetailDrawer.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/components/ConsumptionChart.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/components/DetectionTimeline.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/components/ExplainabilityPanel.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/components/ExportMenu.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/components/GridScene.jsx`
+- `dashboard/src/components/Layout.jsx`
+- `dashboard/src/components/UI.jsx`
+- `dashboard/src/hooks/useResource.js`
+- `dashboard/src/hooks/useWebSocket.js` (removed; superseded legacy/mock implementation)
+- `dashboard/src/index.css`
+- `dashboard/src/main.jsx`
+- `dashboard/src/pages/AlertsView.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/pages/CasesList.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/pages/Console.jsx`
+- `dashboard/src/pages/ConsumerDetailView.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/pages/ConsumersList.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/pages/DashboardHome.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/pages/FeederDetailView.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/pages/FeedersList.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/pages/Landing.jsx`
+- `dashboard/src/pages/ModelMetrics.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/pages/ScenarioLab.jsx` (removed; superseded legacy/mock implementation)
+- `dashboard/src/pages/Simulation.jsx`
+- `dashboard/tests/browser.spec.js`
+- `dashboard/tests/contracts.test.mjs`
+- `dashboard/tests/evidence.test.mjs`
+- `dashboard/tests/integration.mjs`
+- `dashboard/tests/states.test.mjs`
+- `dashboard/vite.config.js`

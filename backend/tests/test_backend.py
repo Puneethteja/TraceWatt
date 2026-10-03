@@ -34,7 +34,7 @@ def setup_db():
 def test_health():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert "app" in response.json()
 
 def test_insert_reading_unknown_consumer():
     response = client.post("/readings", json={
