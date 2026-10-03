@@ -1,0 +1,310 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\adity\Desktop\dy\TraceWatt
+plugins: anyio-4.11.0, langsmith-0.12.4, zarr-3.3.0
+collected 137 items
+
+backend\tests\test_backend.py F......                                    [  5%]
+backend\tests\test_clean.py .........................                    [ 23%]
+backend\tests\test_engine_adapter.py .............                       [ 32%]
+backend\tests\test_engine_scenarios.py FF..F..................           [ 49%]
+backend\tests\test_features.py ...........                               [ 57%]
+backend\tests\test_feeder_analysis.py F...                               [ 60%]
+backend\tests\test_loss.py ........................                      [ 78%]
+backend\tests\test_pipeline.py .....                                     [ 81%]
+backend\tests\test_readings_api.py .....                                 [ 85%]
+backend\tests\test_routers.py ............F.                             [ 95%]
+backend\tests\test_synthetic_generation.py ......                        [100%]
+
+================================== FAILURES ===================================
+_________________________________ test_health _________________________________
+backend\tests\test_backend.py:37: in test_health
+    assert response.json() == {"status": "ok"}
+E   AssertionError: assert {'app': 'Trac...': False, ...} == {'status': 'ok'}
+E     
+E     Omitting 1 identical items, use -vv to show
+E     Left contains 4 more items:
+E     {'app': 'TraceWatt API',
+E      'database': 'synced',
+E      'fuzzy_engine': 'active',
+E      'mqtt_connected': False}
+E     Use -v to get more diff
+_________________ TestTheftScenario.test_cause_classification _________________
+backend\tests\test_engine_scenarios.py:222: in test_cause_classification
+    assert det["cause"] in ("Suspected theft/tampering", "Theft/Tampering"), (
+E   AssertionError: Expected Suspected theft/tampering, got Legitimate abnormal usage (anomaly_score=0.458, confidence=0.552)
+E   assert 'Legitimate abnormal usage' in ('Suspected theft/tampering', 'Theft/Tampering')
+__________________ TestTheftScenario.test_high_anomaly_score __________________
+backend\tests\test_engine_scenarios.py:232: in test_high_anomaly_score
+    assert det["anomaly_score"] > 0.5, f"Expected score > 0.5, got {det['anomaly_score']:.3f}"
+E   AssertionError: Expected score > 0.5, got 0.458
+E   assert 0.4577 > 0.5
+________ TestTheftScenario.test_recommended_action_mentions_inspection ________
+backend\tests\test_engine_scenarios.py:261: in test_recommended_action_mentions_inspection
+    assert "inspection" in det["recommended_action"].lower() or "field" in det["recommended_action"].lower()
+E   AssertionError: assert ('inspection' in 'verify with consumer ΓÇö business event or load change. update baseline.' or 'field' in 'verify with consumer ΓÇö business event or load change. update baseline.')
+E    +  where 'verify with consumer ΓÇö business event or load change. update baseline.' = <built-in method lower of str object at 0x000001A5AF30E730>()
+E    +    where <built-in method lower of str object at 0x000001A5AF30E730> = 'Verify with consumer ΓÇö business event or load change. Update baseline.'.lower
+E    +  and   'verify with consumer ΓÇö business event or load change. update baseline.' = <built-in method lower of str object at 0x000001A5AF30E730>()
+E    +    where <built-in method lower of str object at 0x000001A5AF30E730> = 'Verify with consumer ΓÇö business event or load change. Update baseline.'.lower
+___________ TestRunFeederAnalysis.test_feeder_summary_rows_and_math ___________
+backend\tests\test_feeder_analysis.py:81: in test_feeder_summary_rows_and_math
+    run_feeder_analysis(session, window_start, window_end)
+backend\services\feeder_analysis.py:214: in run_feeder_analysis
+    feeder_obj = FeederSummary(
+<string>:4: in __init__
+    ???
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\state.py:596: in _initialize_instance
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\util\langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\state.py:594: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\decl_base.py:2193: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'transformer_id' is an invalid keyword argument for FeederSummary
+____________________________ test_export_case_pdf _____________________________
+backend\tests\test_routers.py:102: in test_export_case_pdf
+    response = client.get("/export/cases/C1/pdf")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\testclient.py:483: in get
+    return super().get(
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx2\_client.py:1113: in get
+    return self.request(
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\testclient.py:455: in request
+    return super().request(
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx2\_client.py:797: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx2\_client.py:980: in send
+    response = self._send_handling_auth(
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx2\_client.py:1008: in _send_handling_auth
+    response = self._send_handling_redirects(
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx2\_client.py:1043: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx2\_client.py:1076: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\testclient.py:354: in handle_request
+    raise exc
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\testclient.py:351: in handle_request
+    portal.call(self.app, scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\anyio\from_thread.py:321: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\anyio\from_thread.py:252: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:1163: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\cors.py:88: in __call__
+    await self.app(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\routing.py:670: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:2734: in app
+    await route.handle(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:1780: in handle
+    await self.original_router.handle(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:2789: in handle
+    await included_router._handle_selected(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:1800: in _handle_selected
+    await original_route.handle(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:1279: in handle
+    await app(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:158: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:144: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:706: in app
+    raw_response = await run_endpoint_function(
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:354: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\concurrency.py:34: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\anyio\to_thread.py:56: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\anyio\_backends\_asyncio.py:2485: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\anyio\_backends\_asyncio.py:976: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+backend\app\routers\export.py:32: in export_case_pdf
+    pdf_bytes = render_report(case=case, consumer=consumer, baseline=baseline)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\app\services\report_pdf.py:42: in render_report
+    report_text += f"    {b.ts}: {b.expected_kwh} kWh\n"
+                          ^^^^
+E   AttributeError: 'dict' object has no attribute 'ts'
+============================== warnings summary ===============================
+backend\app\services\mqtt_service.py:30
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\app\services\mqtt_service.py:30: DeprecationWarning: Callback API version 1 is deprecated, update to latest version
+    self.client = mqtt.Client(client_id=self.client_id, protocol=mqtt.MQTTv311)
+
+backend\app\main.py:21
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\app\main.py:21: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:4681
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:4681
+  C:\Users\adity\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:4681: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+backend\app\main.py:30
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\app\main.py:30: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+backend/tests/test_backend.py::test_case_upsert
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_backend.py:81: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    period_start=datetime.utcnow(),
+
+backend/tests/test_backend.py::test_case_upsert
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_backend.py:82: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    period_end=datetime.utcnow(),
+
+backend/tests/test_backend.py: 2 warnings
+backend/tests/test_pipeline.py: 8 warnings
+backend/tests/test_routers.py: 1 warning
+  C:\Users\adity\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\sql\schema.py:3627: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+backend/tests/test_backend.py::test_alert_transition
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_backend.py:103: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    period_start=datetime.utcnow(),
+
+backend/tests/test_backend.py::test_alert_transition
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_backend.py:104: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    period_end=datetime.utcnow(),
+
+backend/tests/test_backend.py::test_alert_transition
+backend/tests/test_pipeline.py::test_pipeline_success
+backend/tests/test_pipeline.py::test_cause_change_alert
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\app\db.py:445: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    created_at=datetime.utcnow()
+
+backend/tests/test_pipeline.py::test_reading_enters_queue
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_pipeline.py:52: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    reading = ReadingIn(consumer_id="C1", ts=datetime.utcnow(), kwh=10.5)
+
+backend/tests/test_pipeline.py::test_pipeline_success
+backend/tests/test_pipeline.py::test_case_preservation_and_duplicate_alerts
+backend/tests/test_pipeline.py::test_cause_change_alert
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_pipeline.py:41: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    period_start=datetime.utcnow(),
+
+backend/tests/test_pipeline.py::test_pipeline_success
+backend/tests/test_pipeline.py::test_case_preservation_and_duplicate_alerts
+backend/tests/test_pipeline.py::test_cause_change_alert
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_pipeline.py:42: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    period_end=datetime.utcnow(),
+
+backend/tests/test_pipeline.py::test_pipeline_success
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_pipeline.py:63: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    reading = ReadingIn(consumer_id="C1", ts=datetime.utcnow(), kwh=2.0)
+
+backend/tests/test_pipeline.py::test_pipeline_success
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_pipeline.py:66: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    db_reading = Reading(consumer_id="C1", ts=datetime.utcnow(), kwh=2.0)
+
+backend/tests/test_pipeline.py::test_pipeline_success
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\app\services\pipeline.py:98: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    first_flagged_at = existing_case.first_flagged_at if existing_case else datetime.utcnow()
+
+backend/tests/test_pipeline.py::test_case_preservation_and_duplicate_alerts
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_pipeline.py:117: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    db_reading = Reading(consumer_id="C1", ts=datetime.utcnow(), kwh=2.0)
+
+backend/tests/test_pipeline.py::test_case_preservation_and_duplicate_alerts
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_pipeline.py:121: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    reading = ReadingIn(consumer_id="C1", ts=datetime.utcnow(), kwh=2.0)
+
+backend/tests/test_pipeline.py::test_case_preservation_and_duplicate_alerts
+backend/tests/test_pipeline.py::test_cause_change_alert
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\app\services\pipeline.py:111: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    existing_case.last_updated_at = datetime.utcnow()
+
+backend/tests/test_pipeline.py::test_cause_change_alert
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_pipeline.py:151: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    db_reading = Reading(consumer_id="C1", ts=datetime.utcnow(), kwh=2.0)
+
+backend/tests/test_pipeline.py::test_cause_change_alert
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_pipeline.py:155: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    reading = ReadingIn(consumer_id="C1", ts=datetime.utcnow(), kwh=2.0)
+
+backend/tests/test_pipeline.py::test_analyze_failure
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_pipeline.py:168: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    db_reading = Reading(consumer_id="C1", ts=datetime.utcnow(), kwh=2.0)
+
+backend/tests/test_pipeline.py::test_analyze_failure
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_pipeline.py:172: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    reading = ReadingIn(consumer_id="C1", ts=datetime.utcnow(), kwh=2.0)
+
+backend/tests/test_routers.py::test_get_consumers
+backend/tests/test_routers.py::test_get_consumers
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_routers.py:23: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    db.add(Case(consumer_id="C1", status="New", risk_level="High", cause="Bypass", anomaly_score=0.9, confidence=0.8, first_flagged_at=datetime.utcnow(), last_updated_at=datetime.utcnow()))
+
+backend/tests/test_routers.py::test_get_consumers
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\tests\test_routers.py:26: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    db.add(FeederSummary(feeder_id="F1", ts=datetime.utcnow(), total_consumers=10, high_risk_consumers=2, total_consumption=500.0, avg_loss_pct=10.5))
+
+backend/tests/test_routers.py::test_update_case_status
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\app\db.py:170: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    case.last_updated_at = datetime.utcnow()
+
+backend/tests/test_routers.py::test_update_case_status
+  C:\Users\adity\Desktop\dy\TraceWatt\backend\app\db.py:173: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    event = CaseEvent(case_id=case.id, event_type=f"Status changed to {status}", note=note, created_at=datetime.utcnow())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED backend/tests/test_backend.py::test_health - AssertionError: assert {'...
+FAILED backend/tests/test_engine_scenarios.py::TestTheftScenario::test_cause_classification
+FAILED backend/tests/test_engine_scenarios.py::TestTheftScenario::test_high_anomaly_score
+FAILED backend/tests/test_engine_scenarios.py::TestTheftScenario::test_recommended_action_mentions_inspection
+FAILED backend/tests/test_feeder_analysis.py::TestRunFeederAnalysis::test_feeder_summary_rows_and_math
+FAILED backend/tests/test_routers.py::test_export_case_pdf - AttributeError: ...
+================= 6 failed, 131 passed, 46 warnings in 10.06s =================

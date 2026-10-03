@@ -1,0 +1,68 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\adity\AppData\Local\Programs\Python\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\adity\Desktop\dy\TraceWatt
+plugins: anyio-4.11.0, langsmith-0.12.4, zarr-3.3.0
+collecting ... collected 5 items
+
+backend/tests/test_engine_scenarios.py::TestTheftScenario::test_cause_classification FAILED [ 20%]
+backend/tests/test_engine_scenarios.py::TestTheftScenario::test_high_anomaly_score FAILED [ 40%]
+backend/tests/test_engine_scenarios.py::TestTheftScenario::test_evidence_mentions_drop PASSED [ 60%]
+backend/tests/test_engine_scenarios.py::TestTheftScenario::test_counter_evidence_mentions_no_fault PASSED [ 80%]
+backend/tests/test_engine_scenarios.py::TestTheftScenario::test_recommended_action_mentions_inspection FAILED [100%]
+
+================================== FAILURES ===================================
+_________________ TestTheftScenario.test_cause_classification _________________
+
+self = <test_engine_scenarios.TestTheftScenario object at 0x00000200E6737390>
+
+    def test_cause_classification(self):
+        """Theft pattern ΓåÆ cause should be Suspected theft/tampering."""
+        from engine.analyze import analyze
+        df = self._build_theft_readings()
+        det = analyze("THEFT_01", df, _make_consumer_row())
+        _assert_valid_detection(det)
+>       assert det["cause"] in ("Suspected theft/tampering", "Theft/Tampering"), (
+            f"Expected Suspected theft/tampering, got {det['cause']} "
+            f"(anomaly_score={det['anomaly_score']:.3f}, confidence={det['confidence']:.3f})"
+        )
+E       AssertionError: Expected Suspected theft/tampering, got Legitimate abnormal usage (anomaly_score=0.460, confidence=0.552)
+E       assert 'Legitimate abnormal usage' in ('Suspected theft/tampering', 'Theft/Tampering')
+
+backend\tests\test_engine_scenarios.py:231: AssertionError
+__________________ TestTheftScenario.test_high_anomaly_score __________________
+
+self = <test_engine_scenarios.TestTheftScenario object at 0x000002008982A490>
+
+    def test_high_anomaly_score(self):
+        """Theft pattern ΓåÆ anomaly_score should be > 0.5."""
+        from engine.analyze import analyze
+        df = self._build_theft_readings()
+        det = analyze("THEFT_01", df, _make_consumer_row())
+>       assert det["anomaly_score"] > 0.5, f"Expected score > 0.5, got {det['anomaly_score']:.3f}"
+E       AssertionError: Expected score > 0.5, got 0.460
+E       assert 0.4598 > 0.5
+
+backend\tests\test_engine_scenarios.py:241: AssertionError
+________ TestTheftScenario.test_recommended_action_mentions_inspection ________
+
+self = <test_engine_scenarios.TestTheftScenario object at 0x0000020089827BF0>
+
+    def test_recommended_action_mentions_inspection(self):
+        """Recommended action should mention field inspection."""
+        from engine.analyze import analyze
+        df = self._build_theft_readings()
+        det = analyze("THEFT_01", df, _make_consumer_row())
+>       assert "inspection" in det["recommended_action"].lower() or "field" in det["recommended_action"].lower()
+E       AssertionError: assert ('inspection' in 'verify with consumer ΓÇö business event or load change. update baseline.' or 'field' in 'verify with consumer ΓÇö business event or load change. update baseline.')
+E        +  where 'verify with consumer ΓÇö business event or load change. update baseline.' = <built-in method lower of str object at 0x000002008980ACE0>()
+E        +    where <built-in method lower of str object at 0x000002008980ACE0> = 'Verify with consumer ΓÇö business event or load change. Update baseline.'.lower
+E        +  and   'verify with consumer ΓÇö business event or load change. update baseline.' = <built-in method lower of str object at 0x000002008980ACE0>()
+E        +    where <built-in method lower of str object at 0x000002008980ACE0> = 'Verify with consumer ΓÇö business event or load change. Update baseline.'.lower
+
+backend\tests\test_engine_scenarios.py:270: AssertionError
+=========================== short test summary info ===========================
+FAILED backend/tests/test_engine_scenarios.py::TestTheftScenario::test_cause_classification
+FAILED backend/tests/test_engine_scenarios.py::TestTheftScenario::test_high_anomaly_score
+FAILED backend/tests/test_engine_scenarios.py::TestTheftScenario::test_recommended_action_mentions_inspection
+========================= 3 failed, 2 passed in 2.58s =========================
