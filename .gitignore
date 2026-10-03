@@ -1,0 +1,75 @@
+# ============================================
+# Ignore raw and processed data directories entirely
+# ============================================
+data/
+backend/data/
+**/data/
+
+# ============================================
+# Ignore data file formats
+# ============================================
+*.csv
+*.parquet
+*.pkl
+*.joblib
+*.h5
+
+# ============================================
+# Ignore databases
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================
+# Ignore Python cache and bytecode
+# ============================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# ============================================
+# Ignore virtual environments
+# ============================================
+.venv/
+venv/
+ENV/
+env/
+
+# ============================================
+# Ignore test and build artifacts
+# ============================================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ============================================
+# Ignore IDE and editor files
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ============================================
+# Ignore OS-specific files
+# ============================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================
+# Ignore logs and temporary files
+# ============================================
+*.log
+*.tmp
+*.temp
