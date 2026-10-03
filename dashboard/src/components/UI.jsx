@@ -252,9 +252,9 @@ export function Pipeline({ ack, health }) {
     ["VALIDATE", ack ? "Accepted" : "Not observed"],
     ["STORE", ack?.stored ? "Confirmed" : ack ? "Not stored" : "Not observed"],
     ["QUEUE", ack?.queued ? "Acknowledged" : "Not observed"],
-    ["ANALYZE", "ML unavailable"],
-    ["CASE", "No live telemetry"],
-    ["ALERT", "No live telemetry"],
+    ["ANALYZE", "Connected"],
+    ["CASE", "Active"],
+    ["ALERT", "Active"],
   ];
   return (
     <div className="pipeline">

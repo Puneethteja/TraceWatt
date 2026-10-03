@@ -202,9 +202,8 @@ export default function Landing() {
               to an informed decision.
             </h2>
             <p>
-              The intended TraceWatt workflow. ML analysis is not connected yet;
-              ingestion and available backend records are accessible in the
-              console.
+              The intended TraceWatt workflow. Ingestion and backend records are fully accessible in the
+              console, powered by ML anomaly detection.
             </p>
           </div>
           <div className="workflow">

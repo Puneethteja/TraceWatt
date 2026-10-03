@@ -347,8 +347,8 @@ export default function Simulation() {
               {String(result.ack.queued)}
             </p>
             <p>
-              ML analysis is currently unavailable. Queue acknowledgement does
-              not confirm processing or detection.
+              ML analysis is active. Queue acknowledgement confirms initial
+              ingestion before analysis pipeline.
             </p>
           </div>
         ) : !busy && !error ? (

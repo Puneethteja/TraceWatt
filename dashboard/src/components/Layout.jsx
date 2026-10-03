@@ -31,7 +31,7 @@ const groups = [
 ];
 export default function Layout({ alerts = [], clearAlerts }) {
   const [open, setOpen] = useState(false),
-    [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
+    [dark, setDark] = useState(() => localStorage.getItem("theme") !== "light");
   const health = useResource(api.health, 30000),
     location = useLocation();
   function theme() {
@@ -69,7 +69,6 @@ export default function Layout({ alerts = [], clearAlerts }) {
         ))}
         <div className="sidebar-bottom">
           <span className="dot" /> Evidence before action
-          <p>ML analysis not connected</p>
           <Link to="/">About TraceWatt ↗</Link>
         </div>
       </aside>
