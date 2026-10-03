@@ -64,7 +64,7 @@ async def process_reading(reading):
         t_detect_start = time.time()
         
         try:
-            detection = analyze(
+            detection_dict = analyze(
                 consumer_id=reading.consumer_id,
                 readings_df=readings_df,
                 consumer_row=consumer_row,
@@ -74,8 +74,14 @@ async def process_reading(reading):
             logger.error(f"analyze() failed for {reading.consumer_id}: {e}")
             return
             
-        if not detection:
+        if not detection_dict:
             return
+            
+        from ..schemas import Detection
+        if isinstance(detection_dict, dict):
+            detection = Detection(**detection_dict)
+        else:
+            detection = detection_dict
             
         t_detect_end = time.time()
         
