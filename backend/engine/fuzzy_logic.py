@@ -11,13 +11,13 @@ def triangular_mf(x: float, a: float, b: float, c: float) -> float:
     return 0.0
 
 def trapezoidal_mf(x: float, a: float, b: float, c: float, d: float) -> float:
-    if x <= a or x >= d:
+    if x < a or x > d:
         return 0.0
-    if a < x < b:
+    if a <= x < b:
         return (x - a) / (b - a) if b > a else 1.0
     if b <= x <= c:
         return 1.0
-    if c < x < d:
+    if c < x <= d:
         return (d - x) / (d - c) if d > c else 1.0
     return 0.0
 

@@ -211,7 +211,12 @@ def run_feeder_analysis(session: Session, window_start: str, window_end: str) ->
 
     # 5. Upsert into feeder_summary table
     for _, row in summary_df.iterrows():
+        from datetime import datetime
         feeder_obj = FeederSummary(
+            feeder_id=row["transformer_id"],
+            ts=datetime.utcnow(),
+            total_consumers=0,
+            high_risk_consumers=0,
             transformer_id=row["transformer_id"],
             window_start=row["window_start"],
             window_end=row["window_end"],
