@@ -7,22 +7,22 @@
   background: #f5f6f2;
   font-synthesis: none;
   font-size: 14px;
-  --bg: #0B1115;
-  --panel: rgba(22, 31, 38, 0.7);
-  --panel-solid: #161F26;
-  --text: #F1F5F9;
-  --text-muted: #94A3B8;
-  --border: rgba(51, 65, 85, 0.5);
-  --accent: #00F0FF;
-  --accent-soft: rgba(0, 240, 255, 0.1);
-  --danger: #FF3B30;
-  --danger-soft: rgba(255, 59, 48, 0.1);
-  --warning: #FFCC00;
-  --warning-soft: rgba(255, 204, 0, 0.1);
-  --success: #34C759;
-  --success-soft: rgba(52, 199, 89, 0.1);
-  --soft: rgba(255, 255, 255, 0.05);
-  --muted: var(--text-muted);
+  --bg: #f5f6f2;
+  --panel: #fff;
+  --panel-solid: #fff;
+  --text: #20382f;
+  --text-muted: #697a72;
+  --border: #dfe6de;
+  --accent: #226947;
+  --accent-soft: rgba(34, 105, 71, 0.1);
+  --danger: #a63e2d;
+  --danger-soft: #fbe9e3;
+  --warning: #986326;
+  --warning-soft: #fff0d3;
+  --success: #346a43;
+  --success-soft: #e6f3e5;
+  --soft: #edf3ed;
+  --muted: #697a72;
 }
 .dark-theme {
   --bg: #0B1115;
@@ -31,8 +31,8 @@
   --text: #F1F5F9;
   --text-muted: #94A3B8;
   --border: rgba(51, 65, 85, 0.5);
-  --accent: #00F0FF;
-  --accent-soft: rgba(0, 240, 255, 0.1);
+  --accent: #4ade80;
+  --accent-soft: rgba(74, 222, 128, 0.1);
   --danger: #FF3B30;
   --danger-soft: rgba(255, 59, 48, 0.1);
   --warning: #FFCC00;
@@ -95,7 +95,7 @@ button,
 }
 button:hover,
 .button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--soft);
   border-color: var(--text-muted);
 }
 button:disabled {
@@ -106,16 +106,17 @@ button.primary,
 .button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #000;
+  color: var(--panel-solid);
   font-weight: 600;
   box-shadow: 0 0 15px var(--accent-soft);
 }
 button.primary:hover,
 .button.primary:hover {
-  background: #00C8D6;
-  border-color: #00C8D6;
+  background: var(--accent);
+  border-color: var(--accent);
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.4);
+  box-shadow: 0 4px 20px var(--accent-soft);
+  opacity: 0.9;
 }
 .button.secondary {
   background: transparent;
@@ -186,7 +187,7 @@ input,
 select,
 textarea {
   display: block;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--panel-solid);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -324,9 +325,9 @@ fieldset {
 }
 .error {
   padding: 20px;
-  border: 1px solid #e3b4a5;
-  background: #fff4ef;
-  color: #883d28;
+  border: 1px solid var(--danger-soft);
+  background: var(--danger-soft);
+  color: var(--danger);
   border-radius: 7px;
   margin: 12px 0;
 }
