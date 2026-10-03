@@ -25,7 +25,7 @@ const groups = [
     "SYSTEM",
     [
       ["pipeline", "Pipeline", "⇢"],
-      ["health", "Health", "♡"],
+      ["health", "Diagnostics", "♡"],
     ],
   ],
 ];
