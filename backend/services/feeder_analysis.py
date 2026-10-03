@@ -1,4 +1,4 @@
-﻿"""
+"""
 backend/services/feeder_analysis.py
 ===================================
 Phase-4 Feeder and Transformer Balance Analysis layer for TraceWatt.
@@ -170,7 +170,11 @@ def run_feeder_analysis(session: Session, window_start: str, window_end: str) ->
     )
     tx_rows = session.scalars(tx_stmt).all()
     tx_df = pd.DataFrame([
-        {"transformer_id": r.transformer_id, "ts": r.ts, "energy_in_kwh": r.energy_in_kwh}
+        {
+            "transformer_id": r.transformer_id,
+            "ts": r.ts,
+            "energy_in_kwh": getattr(r, "energy_in_kwh", getattr(r, "kwh", 0.0)),
+        }
         for r in tx_rows
     ])
 
@@ -189,7 +193,10 @@ def run_feeder_analysis(session: Session, window_start: str, window_end: str) ->
     cons_stmt = select(Consumer)
     cons_rows = session.scalars(cons_stmt).all()
     cons_df = pd.DataFrame([
-        {"consumer_id": c.consumer_id, "transformer_id": c.transformer_id}
+        {
+            "consumer_id": getattr(c, "consumer_id", getattr(c, "id", "")),
+            "transformer_id": c.transformer_id,
+        }
         for c in cons_rows
     ])
 

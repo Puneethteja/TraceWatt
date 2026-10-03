@@ -163,10 +163,10 @@ export default function Layout({ alerts = [], clearAlerts }) {
             <span>Grid Engine</span>
             <span className="text-green-400 flex items-center font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>
-              Live
+              Active
             </span>
           </div>
-          <div className="text-slate-500 text-[11px] mt-0.5 font-mono">SCADA v1.2-online</div>
+          <div className="text-slate-500 text-[11px] mt-0.5 font-mono">Grid Engine v1.2</div>
         </div>
       </aside>
 

@@ -91,7 +91,7 @@ export default function ConsumersList() {
               Consumer Anomaly Registry
             </h1>
             <p className="text-xs text-gray-500">
-              Live meter telemetry triage. Click any consumer row to view detailed explainability and baseline curves.
+              Meter telemetry triage. Click any consumer row to view detailed explainability and baseline curves.
             </p>
           </div>
           <ExportMenu

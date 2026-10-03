@@ -1,12 +1,21 @@
-from fastapi import APIRouter, HTTPException
-from typing import List
+from fastapi import APIRouter, HTTPException, Query
+from typing import List, Optional
 
-from ..db import get_case, update_case_status
+from ..db import list_cases, get_case, update_case_status
 from ..schemas import CaseOut, CaseStatusUpdate
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
 ALLOWED_STATUSES = ["New", "Under Review", "Inspection Scheduled", "Confirmed", "False Alarm", "Closed", "Open"]
+
+@router.get("", response_model=List[CaseOut])
+def get_all_cases(
+    status: Optional[str] = Query(None, description="Filter by status"),
+    risk: Optional[str] = Query(None, description="Filter by risk level"),
+    limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0)
+):
+    return list_cases(status=status, risk=risk, limit=limit, offset=offset)
 
 @router.get("/{consumer_id}", response_model=CaseOut)
 def get_case_by_consumer(consumer_id: str):

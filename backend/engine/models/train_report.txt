@@ -1,0 +1,41 @@
+
+=================================================================
+         TraceWatt Model Evaluation & Performance Report
+=================================================================
+1. DATASET & CLASS IMBALANCE HANDLING
+   - Total Labeled Consumers       : 2,400
+   - Majority Class (Normal / 0)   : 2,000
+   - Minority Class (Theft / 1)    : 400
+   - Imbalance Ratio (Neg / Pos)   : 5.0x
+   - scale_pos_weight Penalty      : 5.0x (Applied in LightGBM)
+
+2. SPLIT CONFIGURATION (80% Train / 20% Held-Out Test - Stratified)
+   - Training Samples              : 1,920 (Normal: 1,600, Theft: 320)
+   - Testing Samples (Held-Out)    : 480 (Normal: 400, Theft: 80)
+
+3. 5-FOLD STRATIFIED CROSS-VALIDATION (ON TRAIN SET)
+   - CV Accuracy (Mean +/- Std)    : 99.95% +/- 0.10%
+   - CV ROC-AUC (Mean +/- Std)     : 1.0000 +/- 0.0000
+   - CV PR-AUC (Mean +/- Std)      : 1.0000 +/- 0.0000
+
+4. MODEL ACCURACY (TRAINING VS. TESTING)
+   - Training Accuracy             : 100.00%
+   - Testing Accuracy (Unseen Data): 99.79%
+
+5. COMPREHENSIVE TEST-SET METRICS (EVALUATION)
+   - Precision (Theft)             : 0.9877 (98.8%)
+   - Recall (Theft)                : 1.0000 (100.0%)
+   - F1-Score (Theft)              : 0.9938
+   - ROC-AUC                       : 1.0000
+   - PR-AUC                        : 0.9998
+
+6. PROBABILITY CALIBRATION (ISOTONIC OOF)
+   - Raw Brier Loss                : 0.0009
+   - Calibrated Brier Loss         : 0.0006 (Lower = superior calibration)
+   - Calibrated Test ROC-AUC       : 1.0000
+
+7. ARTIFACTS SERIALIZATION
+   - Destination Path              : C:\Users\DELL\TraceWatt\backend\engine\models
+   - Saved Artifacts               : lgbm_model.pkl, calibrator.pkl, iso_forest.pkl, scaler.pkl, feature_cols.json
+   - Training Time Elapsed         : 6.39 seconds
+=================================================================
