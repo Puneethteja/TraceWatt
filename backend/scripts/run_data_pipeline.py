@@ -43,7 +43,7 @@ def main():
     file_b = raw_dir / "Electricity_Theft_Data.csv"
 
     if not file_a.exists() or not file_b.exists():
-        print("❌ ERROR: Raw data files not found!")
+        print("ERROR: Raw data files not found!")
         print(f"Expected: {file_a} and {file_b}")
         print("Please ensure the Kaggle datasets are placed in the data/raw/ directory.")
         sys.exit(1)
@@ -54,7 +54,7 @@ def main():
         file_b_path=str(file_b),
         out_dir=str(processed_dir)
     )
-    print("✅ Phase 1 Complete: consumers.csv, readings.parquet, readings_demo.csv created.")
+    print("Phase 1 Complete: consumers.csv, readings.parquet, readings_demo.csv created.")
 
     print("\n[Phase 2] Engineering features and computing baselines...")
     build_features(
@@ -62,7 +62,7 @@ def main():
         consumers_path=str(processed_dir / "consumers.csv"),
         out_dir=str(processed_dir)
     )
-    print("✅ Phase 2 Complete: features.parquet, baselines.csv created.")
+    print("Phase 2 Complete: features.parquet, baselines.csv created.")
 
     print("\n[Phase 3] Generating synthetic topology and anomaly scenarios...")
     generate_synthetic_data(
@@ -73,10 +73,10 @@ def main():
         n_per_scenario=20,
         seasonal_transformers=4
     )
-    print("✅ Phase 3 Complete: consumers_synthetic.csv, transformers.csv, labels.csv, synthetic_readings.parquet created.")
+    print("Phase 3 Complete: consumers_synthetic.csv, transformers.csv, labels.csv, synthetic_readings.parquet created.")
 
     print("\n" + "=" * 70)
-    print("🎉 Pipeline Complete! All data/processed/ files are ready for ML training.")
+    print("Pipeline Complete! All data/processed/ files are ready for ML training.")
     print("=" * 70)
 
 

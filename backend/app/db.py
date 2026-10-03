@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
-from .models import Base, Consumer, Case, Reading, Baseline, Feeder, Transformer, FeederSummary, Alert, PipelineMetric, CaseEvent
+from .models import Base, Consumer, Case, Reading, Baseline, Feeder, Transformer, FeederSummary, Alert, PipelineMetric, CaseEvent, TransformerReading
 from .config import DATABASE_URL
 from datetime import datetime, timedelta
 
@@ -93,9 +93,9 @@ def list_cases(status=None, risk=None, limit=200, offset=0):
         if risk and risk != "All":
             query = query.filter(Case.risk_level == risk)
         
-        results = query.order_by(Case.priority.asc(), Case.id.asc()).offset(offset).limit(limit).all()
+        results = query.order_by(Case.priority.desc(), Case.id.asc()).offset(offset).limit(limit).all()
         cases = []
-        for rank, case in enumerate(results, start=1):
+        for rank, case in enumerate(results, start=1 + offset):
             cases.append({
                 "id": case.id,
                 "case_id": f"CASE-{case.consumer_id.replace('SYN_', '')}",
@@ -113,7 +113,7 @@ def list_cases(status=None, risk=None, limit=200, offset=0):
                 "counter_evidence": case.counter_evidence,
                 "recommended_action": case.recommended_action,
                 "estimated_loss": case.estimated_loss or 0.0,
-                "priority_rank": int(case.priority) if case.priority else rank,
+                "priority_rank": rank,
                 "priority": case.priority
             })
         return cases
@@ -192,9 +192,17 @@ def list_feeders():
             cons_ids = [c.id for c in consumers]
             high_risk_count = db.query(Case).filter(Case.consumer_id.in_(cons_ids), Case.risk_level == "High").count() if cons_ids else 0
             
-            # Summary stats
-            summary = db.query(FeederSummary).filter(FeederSummary.feeder_id == f.id).first()
-            loss_pct = summary.avg_loss_pct if summary else round(float(high_risk_count * 2.5 + 3.2), 1)
+            # Real calculation for loss_pct
+            txs = db.query(Transformer).filter(Transformer.feeder_id == f.id).all()
+            tx_ids = [t.id for t in txs]
+            from sqlalchemy.sql import func
+            energy_in = db.query(func.sum(TransformerReading.kwh)).filter(TransformerReading.transformer_id.in_(tx_ids)).scalar() or 0.0
+            energy_metered = db.query(func.sum(Reading.kwh)).filter(Reading.consumer_id.in_(cons_ids)).scalar() or 0.0
+            
+            if energy_in > 0:
+                loss_pct = ((energy_in - energy_metered) / energy_in) * 100.0
+            else:
+                loss_pct = 0.0
             
             result.append({
                 "id": f.id,
@@ -205,7 +213,7 @@ def list_feeders():
                 "high_risk_consumers": high_risk_count,
                 "total_unexplained_loss_pct": loss_pct,
                 "unexplained_loss_pct": loss_pct,
-                "cluster_flag": high_risk_count > 2
+                "cluster_flag": loss_pct > 15.0
             })
         return result
     finally:
@@ -214,17 +222,37 @@ def list_feeders():
 def get_feeder_summary(transformer_id=None, feeder_id=None):
     db = SessionLocal()
     try:
-        query = db.query(FeederSummary)
+        query = db.query(Feeder)
         if feeder_id:
-            query = query.filter(FeederSummary.feeder_id == feeder_id)
-        results = query.all()
-        return [{
-            "feeder_id": s.feeder_id,
-            "total_consumers": s.total_consumers,
-            "high_risk_consumers": s.high_risk_consumers,
-            "total_consumption": s.total_consumption,
-            "avg_loss_pct": s.avg_loss_pct
-        } for s in results]
+            query = query.filter(Feeder.id == feeder_id)
+            
+        results = []
+        for feeder in query.all():
+            txs = db.query(Transformer).filter(Transformer.feeder_id == feeder.id).all()
+            tx_ids = [t.id for t in txs]
+            
+            consumers = db.query(Consumer).filter(Consumer.feeder_id == feeder.id).all()
+            cons_ids = [c.id for c in consumers]
+            
+            high_risk = db.query(Case).filter(Case.consumer_id.in_(cons_ids), Case.risk_level == "High").count() if cons_ids else 0
+            
+            from sqlalchemy.sql import func
+            energy_in = db.query(func.sum(TransformerReading.kwh)).filter(TransformerReading.transformer_id.in_(tx_ids)).scalar() or 0.0
+            energy_metered = db.query(func.sum(Reading.kwh)).filter(Reading.consumer_id.in_(cons_ids)).scalar() or 0.0
+            
+            if energy_in > 0:
+                unexplained_loss_pct = ((energy_in - energy_metered) / energy_in) * 100.0
+            else:
+                unexplained_loss_pct = 0.0
+                
+            results.append({
+                "feeder_id": feeder.id,
+                "total_consumers": len(consumers),
+                "high_risk_consumers": high_risk,
+                "total_consumption": energy_metered,
+                "avg_loss_pct": unexplained_loss_pct
+            })
+        return results
     finally:
         db.close()
 
