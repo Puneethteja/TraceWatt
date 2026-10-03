@@ -16,13 +16,13 @@ export default function DetectionTimeline({ periodStart, firstFlaggedAt }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 font-sans">
-      <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-        <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider tracking-tight">
+    <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg p-4 font-sans">
+      <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-800">
+        <h4 className="text-xs font-semibold text-gray-900 dark:text-slate-100 uppercase tracking-wider tracking-tight">
           Detection Timeline
         </h4>
-        <div className="text-xs text-gray-500">
-          Latency: <span className="font-mono font-semibold text-gray-900">{diffDays} days</span>
+        <div className="text-xs text-gray-500 dark:text-slate-400">
+          Latency: <span className="font-mono font-semibold text-gray-900 dark:text-slate-100">{diffDays} days</span>
         </div>
       </div>
 
@@ -30,18 +30,18 @@ export default function DetectionTimeline({ periodStart, firstFlaggedAt }) {
       <div className="mt-6 mb-3 px-3">
         <div className="relative">
           {/* Timeline Border Line */}
-          <div className="absolute top-1 left-2 right-2 border-t-2 border-gray-200" />
+          <div className="absolute top-1 left-2 right-2 border-t-2 border-gray-200 dark:border-slate-700" />
 
           {/* Points */}
           <div className="relative flex justify-between">
             {/* Start Event */}
             <div className="flex flex-col items-start">
-              <div className="w-2 h-2 rounded-full bg-gray-400 -mt-0.5" />
+              <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-slate-600 -mt-0.5" />
               <div className="mt-2 text-left">
-                <span className="text-[11px] font-semibold text-gray-800 block">
+                <span className="text-[11px] font-semibold text-gray-800 dark:text-slate-200 block">
                   Anomaly Started
                 </span>
-                <span className="font-mono text-xs text-gray-500 block">
+                <span className="font-mono text-xs text-gray-500 dark:text-slate-400 block">
                   {formatDate(startDate)}
                 </span>
               </div>
@@ -49,12 +49,12 @@ export default function DetectionTimeline({ periodStart, firstFlaggedAt }) {
 
             {/* Flagged Event */}
             <div className="flex flex-col items-end">
-              <div className="w-2 h-2 rounded-full bg-gray-400 -mt-0.5" />
+              <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-slate-600 -mt-0.5" />
               <div className="mt-2 text-right">
-                <span className="text-[11px] font-semibold text-gray-800 block">
+                <span className="text-[11px] font-semibold text-gray-800 dark:text-slate-200 block">
                   System Flagged
                 </span>
-                <span className="font-mono text-xs text-gray-500 block">
+                <span className="font-mono text-xs text-gray-500 dark:text-slate-400 block">
                   {formatDate(flaggedDate)}
                 </span>
               </div>

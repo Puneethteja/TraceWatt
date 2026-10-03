@@ -17,14 +17,14 @@ export default function ExplainabilityPanel({
   );
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col space-y-4 font-sans">
+    <div className="bg-white border border-gray-200 rounded-md p-4 flex flex-col space-y-4 font-sans h-full">
       {/* Header with Cause & Confidence */}
       <div className="flex items-start justify-between pb-3 border-b border-gray-100">
         <div>
           <div className="text-[11px] uppercase tracking-wider text-gray-500 font-medium">
             Root Cause Diagnosis
           </div>
-          <div className="text-sm font-semibold text-gray-900 mt-0.5">
+          <div className="text-base font-semibold text-gray-900 mt-0.5 tracking-tight">
             {cause || 'Unclassified Anomaly'}
           </div>
         </div>
@@ -32,7 +32,7 @@ export default function ExplainabilityPanel({
           <div className="text-[11px] uppercase tracking-wider text-gray-500 font-medium">
             Confidence
           </div>
-          <div className="font-mono text-sm font-semibold text-gray-900 mt-0.5">
+          <div className="font-mono text-base font-bold text-gray-900 mt-0.5">
             {confidencePercent}%
           </div>
         </div>
@@ -45,22 +45,12 @@ export default function ExplainabilityPanel({
             <span className="mr-1.5 font-bold">⚠</span> Inconclusive Diagnosis — Additional Evidence Required
           </div>
           <p className="leading-relaxed">
-            Automated model classification confidence is insufficient. Based on recorded counter-evidence,
-            the following verification is required:
+            Automated model classification confidence is insufficient. Physical transformer reconciliation recommended.
           </p>
-          {counterEvidence && counterEvidence.length > 0 ? (
-            <ul className="list-disc list-inside mt-1.5 space-y-0.5 text-amber-900 font-medium">
-              {counterEvidence.map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-1 italic">Missing field telemetry and physical transformer inspection logs.</p>
-          )}
         </div>
       )}
 
-      {/* Supporting Evidence */}
+      {/* Supporting Evidence - Forensic Legal Styling */}
       <div>
         <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-2 tracking-tight">
           Supporting Evidence
@@ -70,7 +60,7 @@ export default function ExplainabilityPanel({
             {evidence.map((item, idx) => (
               <div
                 key={idx}
-                className="bg-green-50 border-l-2 border-green-500 p-2 mb-2 text-sm flex items-start text-gray-800 leading-relaxed"
+                className="bg-green-50 border-l-2 border-green-500 p-3 mb-2 text-sm text-gray-800 flex items-start leading-relaxed"
               >
                 <span className="text-green-600 font-bold mr-2 shrink-0">✓</span>
                 <span>{item}</span>
@@ -82,7 +72,7 @@ export default function ExplainabilityPanel({
         )}
       </div>
 
-      {/* Counter Evidence */}
+      {/* Counter Evidence - Forensic Legal Styling */}
       <div>
         <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-2 tracking-tight">
           Counter Evidence
@@ -92,7 +82,7 @@ export default function ExplainabilityPanel({
             {counterEvidence.map((item, idx) => (
               <div
                 key={idx}
-                className="bg-red-50 border-l-2 border-red-500 p-2 mb-2 text-sm flex items-start text-gray-800 leading-relaxed"
+                className="bg-red-50 border-l-2 border-red-500 p-3 mb-2 text-sm text-gray-800 flex items-start leading-relaxed"
               >
                 <span className="text-red-600 font-bold mr-2 shrink-0">✗</span>
                 <span>{item}</span>
@@ -106,7 +96,7 @@ export default function ExplainabilityPanel({
 
       {/* Recommended Action */}
       {recommendedAction && (
-        <div className="pt-2 border-t border-gray-100">
+        <div className="pt-2 border-t border-gray-100 mt-auto">
           <div className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider">
             Recommended Action
           </div>

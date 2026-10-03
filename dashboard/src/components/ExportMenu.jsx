@@ -61,12 +61,12 @@ export default function ExportMenu({ filters = {}, filenamePrefix = 'tracewatt_e
   return (
     <div className="flex flex-col items-end space-y-1.5 font-sans">
       <div className="flex items-center space-x-1.5">
-        <span className="text-xs text-gray-500 font-mono mr-1">Export:</span>
+        <span className="text-xs text-gray-500 dark:text-slate-400 font-mono mr-1">Export:</span>
         <button
           type="button"
           disabled={isExporting}
           onClick={() => handleExport('csv')}
-          className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-md px-2 py-1 text-xs font-mono transition-colors duration-150 disabled:opacity-50 cursor-pointer"
+          className="bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md px-2 py-1 text-xs font-mono transition-colors duration-150 disabled:opacity-50 cursor-pointer"
         >
           CSV
         </button>
@@ -74,7 +74,7 @@ export default function ExportMenu({ filters = {}, filenamePrefix = 'tracewatt_e
           type="button"
           disabled={isExporting}
           onClick={() => handleExport('json')}
-          className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-md px-2 py-1 text-xs font-mono transition-colors duration-150 disabled:opacity-50 cursor-pointer"
+          className="bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md px-2 py-1 text-xs font-mono transition-colors duration-150 disabled:opacity-50 cursor-pointer"
         >
           JSON
         </button>
@@ -82,14 +82,14 @@ export default function ExportMenu({ filters = {}, filenamePrefix = 'tracewatt_e
           type="button"
           disabled={isExporting}
           onClick={() => handleExport('pdf')}
-          className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-md px-2 py-1 text-xs font-mono transition-colors duration-150 disabled:opacity-50 cursor-pointer"
+          className="bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md px-2 py-1 text-xs font-mono transition-colors duration-150 disabled:opacity-50 cursor-pointer"
         >
           PDF
         </button>
       </div>
 
       {errorMessage && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-2 rounded max-w-xs text-right">
+        <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs p-2 rounded max-w-xs text-right">
           {errorMessage}
         </div>
       )}
