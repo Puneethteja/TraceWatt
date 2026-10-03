@@ -5,7 +5,7 @@ from .config import ALLOWED_ORIGINS
 from .db import init_db
 from .seed import seed_database
 from .services.mqtt_service import mqtt_service
-from .routers import readings, consumers, cases, feeders, export, alerts, dashboard
+from .routers import readings, consumers, cases, feeders, export, alerts, dashboard, ws
 from .services.pipeline import process_queue
 
 app = FastAPI(title="TraceWatt API", version="1.0.0")
@@ -48,3 +48,4 @@ app.include_router(cases.router)
 app.include_router(feeders.router)
 app.include_router(alerts.router)
 app.include_router(export.router)
+app.include_router(ws.router)
