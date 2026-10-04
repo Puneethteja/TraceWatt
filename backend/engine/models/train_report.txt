@@ -2,43 +2,40 @@
 =================================================================
          TraceWatt Model Evaluation & Performance Report
 =================================================================
-1. DATASET & COHORT CONFIGURATION
-   - Total Data Considered         : 35,000 Consumers
-   - Majority Class (Normal / 0)   : 31,650 (90.4%)
-   - Minority Class (Theft / 1)    : 3,350 (9.6%)
-   - Imbalance Ratio (Neg / Pos)   : 9.45x
-   - scale_pos_weight Penalty      : 2.50x (Applied in LightGBM)
-   - Random Seed / Reproducibility : random_state=42
+1. DATASET & CLASS IMBALANCE HANDLING
+   - Total Labeled Consumers       : 2,400
+   - Majority Class (Normal / 0)   : 2,000
+   - Minority Class (Theft / 1)    : 400
+   - Imbalance Ratio (Neg / Pos)   : 5.0x
+   - scale_pos_weight Penalty      : 5.0x (Applied in LightGBM)
 
-2. SPLIT CONFIGURATION (28,000 Train / 7,000 Held-Out Test - Stratified)
-   - Training Samples              : 28,000 (Normal: 25,320, Theft: 2,680)
-   - Testing Samples (Held-Out)    : 7,000 (Normal: 6,330, Theft: 670)
+2. SPLIT CONFIGURATION (80% Train / 20% Held-Out Test - Stratified)
+   - Training Samples              : 1,920 (Normal: 1,600, Theft: 320)
+   - Testing Samples (Held-Out)    : 480 (Normal: 400, Theft: 80)
 
 3. 5-FOLD STRATIFIED CROSS-VALIDATION (ON TRAIN SET)
-   - CV Accuracy (Mean +/- Std)    : 90.16% +/- 0.27%
-   - CV ROC-AUC (Mean +/- Std)     : 0.7838 +/- 0.0110
-   - CV PR-AUC (Mean +/- Std)      : 0.3651 +/- 0.0229
-   - CV F1-Score (Mean +/- Std)    : 0.3613 +/- 0.0144
+   - CV Accuracy (Mean +/- Std)    : 99.95% +/- 0.10%
+   - CV ROC-AUC (Mean +/- Std)     : 1.0000 +/- 0.0000
+   - CV PR-AUC (Mean +/- Std)      : 1.0000 +/- 0.0000
 
-4. MODEL ACCURACY (UNSEEN TEST DATA)
-   - Testing Accuracy (7,000 test) : 89.97%
+4. MODEL ACCURACY (TRAINING VS. TESTING)
+   - Training Accuracy             : 100.00%
+   - Testing Accuracy (Unseen Data): 99.79%
 
-5. COMPREHENSIVE TEST-SET METRICS (EVALUATION ON 7,000 TEST SAMPLES)
-   - Precision (Theft)             : 0.4635 (46.3%)
-   - Recall (Theft)                : 0.3030 (30.3%)
-   - F1-Score (Theft)              : 0.3664
-   - ROC-AUC                       : 0.7806
-   - PR-AUC                        : 0.3726
-   - False Positive Rate (FPR)     : 3.71%
-   - False Negative Rate (FNR)     : 69.70%
-   - Confusion Matrix              : TP=203, FP=235, TN=6,095, FN=467
+5. COMPREHENSIVE TEST-SET METRICS (EVALUATION)
+   - Precision (Theft)             : 0.9877 (98.8%)
+   - Recall (Theft)                : 1.0000 (100.0%)
+   - F1-Score (Theft)              : 0.9938
+   - ROC-AUC                       : 1.0000
+   - PR-AUC                        : 0.9998
 
 6. PROBABILITY CALIBRATION (ISOTONIC OOF)
-   - Raw Brier Loss                : 0.0819
-   - Calibrated Brier Loss         : 0.0727 (Lower = superior calibration)
+   - Raw Brier Loss                : 0.0009
+   - Calibrated Brier Loss         : 0.0006 (Lower = superior calibration)
+   - Calibrated Test ROC-AUC       : 1.0000
 
 7. ARTIFACTS SERIALIZATION
-   - Destination Path              : C:\Users\DELL\TraceWatt\backend\engine\models
-   - Saved Artifacts               : lgbm_model.pkl, calibrator.pkl, iso_forest.pkl, scaler.pkl, feature_cols.json, eval_metrics.json
-   - Training Time Elapsed         : 14.75 seconds
+   - Destination Path              : C:\Users\adity\Desktop\dy\TraceWatt\backend\engine\models
+   - Saved Artifacts               : lgbm_model.pkl, calibrator.pkl, iso_forest.pkl, scaler.pkl, feature_cols.json
+   - Training Time Elapsed         : 15.89 seconds
 =================================================================

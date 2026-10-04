@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useResource } from "../hooks/useResource";
 import { api } from "../api/client";
+import Logo from "./Logo";
 const groups = [
   [
     "WORKSPACE",
@@ -50,8 +51,8 @@ export default function Layout({ alerts = [], clearAlerts }) {
         Skip to content
       </a>
       <aside className={`sidebar ${open ? "is-open" : ""}`}>
-        <Link className="brand" to="/">
-          <span className="brand-mark">ϟ</span>TraceWatt
+        <Link className="px-5 py-4 block" to="/">
+          <Logo variant="full" theme={dark ? "dark" : "light"} />
         </Link>
         <div className="workspace-label">
           UTILITY OPERATIONS <span>↗</span>
