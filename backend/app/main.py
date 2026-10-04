@@ -6,7 +6,7 @@ from .db import init_db, get_pipeline_metrics
 from .seed import seed_database
 from .services.mqtt_service import mqtt_service
 from .routers import readings, consumers, cases, feeders, export, alerts, dashboard, ws
-from .services.pipeline import process_queue
+from .services.pipeline import process_queue, queue_reading
 
 app = FastAPI(title="TraceWatt API", version="1.0.0")
 
@@ -22,10 +22,21 @@ app.add_middleware(
 async def startup_event():
     init_db()
     seed_database()
-    # Start MQTT background loop
+    loop = asyncio.get_running_loop()
+
+    # Forward MQTT readings directly into the ML analysis pipeline queue
+    def on_mqtt_reading(reading):
+        try:
+            asyncio.run_coroutine_threadsafe(queue_reading(reading), loop)
+        except Exception as e:
+            pass
+
+    mqtt_service.set_queue_callback(on_mqtt_reading)
+    # Start MQTT background network loop
     mqtt_service.start()
     # Start pipeline queue worker
     asyncio.create_task(process_queue())
+
 
 @app.on_event("shutdown")
 async def shutdown_event():

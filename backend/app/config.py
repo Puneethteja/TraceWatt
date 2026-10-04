@@ -14,3 +14,13 @@ DATA_DIR = os.getenv("DATA_DIR", "./data")
 MODEL_DIR = os.getenv("MODEL_DIR", "./models")
 WINDOW_ROWS = int(os.getenv("WINDOW_ROWS", "100"))
 EXPECTED_INTERVAL_SECONDS = int(os.getenv("EXPECTED_INTERVAL_SECONDS", "3600"))
+
+# MQTT Protocol Configuration
+MQTT_BROKER = os.getenv("MQTT_BROKER", "test.mosquitto.org")
+MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
+MQTT_KEEPALIVE = int(os.getenv("MQTT_KEEPALIVE", "60"))
+MQTT_TOPIC_TELEMETRY = os.getenv("MQTT_TOPIC_TELEMETRY", "tracewatt/telemetry/+/reading")
+MQTT_TOPIC_ALERTS = os.getenv("MQTT_TOPIC_ALERTS", "tracewatt/alerts/#")
+MQTT_CLIENT_ID = os.getenv("MQTT_CLIENT_ID", "tracewatt_backend_server")
+MQTT_ENABLED = os.getenv("MQTT_ENABLED", "true").lower() in ("true", "1", "yes")
+

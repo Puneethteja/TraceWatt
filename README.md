@@ -3,7 +3,7 @@
 > **Enterprise-grade intelligence for electricity distribution utilities.**  
 > Fuses machine learning classifiers, fuzzy logic inference, rolling quantile baselines, and multi-factor explainability to identify, explain, and resolve electricity theft and grid anomalies in real time.
 
-**Tech Stack:** Python 3.11+ · FastAPI · LightGBM · scikit-learn · Mamdani Fuzzy Logic · SHAP · React 19 · Vite · Three.js · TailwindCSS · WebSockets · MQTT · SQLite/PostgreSQL · ReportLab
+**Tech Stack:** Python 3.11+ · FastAPI · LightGBM · scikit-learn · Mamdani Fuzzy Logic · SHAP · React 19 · Vite · Three.js · TailwindCSS · WebSockets · MQTT Protocol (`paho-mqtt`) · SQLite/PostgreSQL · ReportLab
 
 ---
 
@@ -17,10 +17,11 @@
   - [3. Reviewer Mission Console & 3D Grid Visualizer](#3-reviewer-mission-console--3d-grid-visualizer)
   - [4. Grid Hierarchy & Substation Energy Accounting](#4-grid-hierarchy--substation-energy-accounting)
   - [5. Field Technician & Lineman Mobile Portal](#5-field-technician--lineman-mobile-portal)
-  - [6. Virtual IoT Meter Simulator & Hardware Bridge](#6-virtual-iot-meter-simulator--hardware-bridge)
+  - [6. Virtual IoT Meter Simulator & MQTT Telemetry Engine](#6-virtual-iot-meter-simulator--mqtt-telemetry-engine)
   - [7. Audit-Ready PDF & JSON Investigation Dossiers](#7-audit-ready-pdf--json-investigation-dossiers)
 - [How It Works](#-how-it-works)
 - [Root Cause Taxonomy](#-root-cause-taxonomy)
+- [MQTT Protocol Architecture](#-mqtt-protocol-architecture)
 - [Performance & Benchmark Evaluation](#-performance--benchmark-evaluation)
 - [API Reference](#-api-reference)
 - [Repository Structure](#-repository-structure)
@@ -33,7 +34,7 @@
 
 ## ⚡ Overview
 
-**TraceWatt** bridges the gap between raw smart-meter telemetry and actionable field operations. It analyzes 15-minute interval smart meter readings (voltage, current, active power, energy, and communication status) to detect abnormal consumption patterns. 
+**TraceWatt** bridges the gap between raw smart-meter telemetry and actionable field operations. It analyzes 15-minute interval smart meter readings (voltage, current, active power, energy, and communication status) to detect abnormal consumption patterns.
 
 Unlike black-box anomaly detectors, TraceWatt combines a **hybrid ML pipeline (LightGBM + Isolation Forest)** with an expert **Mamdani Fuzzy Logic Inference Engine (85/15 ensemble)**. Every detected anomaly is paired with SHAP attributions, counter-evidence checks (ruling out legitimate outages and network dropouts), and specific field action recommendations.
 
@@ -43,16 +44,19 @@ Unlike black-box anomaly detectors, TraceWatt combines a **hybrid ML pipeline (L
 
 ```mermaid
 flowchart TD
-    subgraph Ingestion["1. Telemetry Ingestion Layer"]
-        AMI["Smart Meters (AMI)"]
-        SIM["Virtual IoT Simulator"]
-        ESP["ESP32 + CT/PT Sensors (MQTT)"]
-        API["FastAPI REST & WebSockets (/readings)"]
-        QUEUE["Async Worker Queue & Deduplication Engine"]
+    subgraph Ingestion["1. Telemetry Ingestion Layer (REST & MQTT)"]
+        AMI["Smart Meter AMI Networks"]
+        SIM["Virtual IoT Telemetry Simulator"]
+        MQTTPUB["MQTT Telemetry Streamer"]
+        API["FastAPI REST Endpoints (/readings)"]
+        MQTTSVC["TraceWatt MQTT Service (Broker Subscriber)"]
+        QUEUE["Async Queue Worker & Deduplication Engine"]
+        
         AMI --> API
         SIM --> API
-        ESP -.->|MQTT Broker| API
+        MQTTPUB -->|Topic: tracewatt/telemetry/+/reading| MQTTSVC
         API --> QUEUE
+        MQTTSVC --> QUEUE
     end
 
     subgraph Engine["2. Profiling & Detection Engine"]
@@ -83,8 +87,9 @@ flowchart TD
         LINE["Field Lineman Portal (/lineman)"]
         PDF["Audit Dossier Generator (PDF / JSON)"]
         WS["Live Alert Feed (/ws/alerts)"]
+        MQTTALERT["MQTT Alert Publisher (tracewatt/alerts/#)"]
 
-        SHAP & CE & PATT & ACT --> DASH & THREE & LINE & PDF & WS
+        SHAP & CE & PATT & ACT --> DASH & THREE & LINE & PDF & WS & MQTTALERT
     end
 ```
 
@@ -123,7 +128,7 @@ flowchart TD
 - **Inspection Dispatching:** Displays assigned tickets with priority, consumer details, address/GPS coordinates, and recommended diagnostic checklists.
 - **Field Evidence Capture:** Simulates photo uploads of tampered seals and meters, logs field findings, and syncs status back to the central console.
 
-### 6. Virtual IoT Meter Simulator & Hardware Bridge
+### 6. Virtual IoT Meter Simulator & MQTT Telemetry Engine
 - **Multi-Parameter Stream Generator:** Streams continuous 15-minute synthetic AMI readings (Voltage, Current, Power kW, Cumulative Energy kWh, Meter Status, Comm Status).
 - **Interactive Scenario Injection:** Inject live real-world fault and tampering signatures:
   - ⚡ *Physical Shunt / Partial Bypass* (50%–80% consumption drop under active load)
@@ -131,7 +136,7 @@ flowchart TD
   - 🔌 *Dead Sensor / Meter Malfunction* (0V / 0kW fault codes with normal supply)
   - 📡 *Intermittent Communication Packet Loss* (Missing telemetry without load change)
   - 📈 *Gaussian Sensor Noise & Load Spikes*
-- **Physical Hardware Compatibility:** Integrated MQTT subscriber service (`backend/app/services/mqtt_service.py`) ingestible by ESP32 + CT/PT sensor hardware rigs.
+- **Full MQTT Protocol Support:** Integrated `paho-mqtt` background service subscribing to meter telemetry feeds and broadcasting real-time alerts.
 
 ### 7. Audit-Ready PDF & JSON Investigation Dossiers
 - **Exportable Investigation Dossiers:** Generates court-admissible, printable inspection PDFs (`ReportLab`) and REST JSON payloads via `GET /export/cases/{id}/pdf`.
@@ -142,11 +147,11 @@ flowchart TD
 ## 🔄 How It Works
 
 ```
-1. Ingest      --> Smart meter telemetry arrives via REST or MQTT, passes validation & deduplication.
+1. Ingest      --> Smart meter telemetry arrives via REST (/readings) or MQTT broker, passes validation & deduplication.
 2. Profile     --> Resamples to 15-min grid, updates 14-day rolling quantile baseline envelope.
 3. Detect      --> Extracts statistical features; evaluates LightGBM + Isolation Forest + Fuzzy Rules.
 4. Explain     --> Computes SHAP attributions, checks counter-evidence, assigns pattern and action.
-5. Review      --> Dispatches case to Mission Console & Alert Feed; generates inspection dossier.
+5. Review      --> Dispatches case to Mission Console, Alert Feed, and MQTT alert channel.
 6. Field Action--> Lineman executes inspection via mobile portal, confirms or clears finding.
 ```
 
@@ -163,6 +168,59 @@ flowchart TD
 | **Seasonal Variation** | Weather-driven demand shifts (e.g., summer AC load or winter heating). | Consumption shift mirrored across $>70\%$ of peers on the same transformer. | Update dynamic baseline parameters to absorb regional seasonal envelope. |
 | **Normal Operation** | Stable consumption within the statistical envelope. | Current draw sits within 14-day p10–p90 baseline bounds. | No action required. |
 | **Requires Review** | Telemetry anomalies where model confidence is below $40\%$. | Mixed signals across ML and fuzzy rules requiring human operator adjudication. | Hold case for senior analyst review before dispatching field trucks. |
+
+---
+
+## 📡 MQTT Protocol Architecture
+
+TraceWatt includes a native **MQTT 3.1.1 protocol engine** (`backend/app/services/mqtt_service.py`) running as a background service. It connects to any MQTT broker (e.g. Eclipse Mosquitto, EMQX, HiveMQ) to provide publish-subscribe smart-meter data ingestion and real-time alert broadcasting.
+
+### 1. MQTT Topic Hierarchy
+```
+tracewatt/
+├── telemetry/
+│   └── {consumer_id}/
+│       └── reading        [SUBSCRIBE] Ingestion feed for 15-minute interval smart meter readings
+└── alerts/
+    ├── {consumer_id}      [PUBLISH]   Individual consumer anomaly alert payload
+    └── broadcast          [PUBLISH]   Global broadcast channel for high-priority theft/malfunction events
+```
+
+### 2. Telemetry Ingestion Payload Schema (JSON)
+Published to `tracewatt/telemetry/{consumer_id}/reading`:
+```json
+{
+  "consumer_id": "CONS_0042",
+  "ts": "2026-10-04T11:00:00Z",
+  "kwh": 0.85,
+  "voltage": 230.4,
+  "current": 3.9,
+  "power_kw": 0.88,
+  "meter_status": "OK",
+  "comm_status": "OK"
+}
+```
+
+### 3. Anomaly Alert Payload Schema (JSON)
+Published to `tracewatt/alerts/{consumer_id}` and `tracewatt/alerts/broadcast`:
+```json
+{
+  "consumer_id": "CONS_0042",
+  "risk_level": "High",
+  "cause": "Theft/Tampering",
+  "anomaly_score": 0.92,
+  "confidence": 0.88,
+  "recommended_action": "Dispatch field inspection unit to verify terminal junction seals.",
+  "timestamp": "2026-10-04T11:00:14Z"
+}
+```
+
+### 4. Running the MQTT Simulator
+To stream simulated smart-meter telemetry packets directly over MQTT:
+```bash
+# Stream simulated readings to MQTT broker
+python backend/scripts/mqtt_simulator.py --broker test.mosquitto.org --num-meters 20 --interval-sec 1.0
+```
 
 ---
 
@@ -206,7 +264,7 @@ Interactive OpenAPI documentation is available at `http://localhost:8000/docs`.
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/health` | Ingestion queue status, database connection, and pipeline latency |
+| `GET` | `/health` | Ingestion queue status, database connection, MQTT status, and pipeline latency |
 | `GET` | `/evaluation` | Full evaluation metrics, confusion matrix, and benchmark parameters |
 | `GET` | `/dashboard/summary` | Loss KPIs, flagged consumer totals, and financial loss amounts |
 | `GET` | `/dashboard/consumption-trend` | System-wide aggregate consumption trends over time |
@@ -223,7 +281,7 @@ Interactive OpenAPI documentation is available at `http://localhost:8000/docs`.
 | `GET` | `/feeders/{id}/losses` | Calculated non-technical loss time series for a feeder |
 | `GET` | `/alerts` | Recent real-time anomaly alerts with unread counter |
 | `POST` | `/alerts/{id}/ack` | Acknowledge alert |
-| `POST` | `/readings` | Ingest single or streaming smart-meter telemetry packet |
+| `POST` | `/readings` | Ingest single smart-meter telemetry packet via REST |
 | `GET` | `/export/cases/{id}/report` | Detailed JSON investigation report with explainability signals |
 | `GET` | `/export/cases/{id}/pdf` | Downloadable court-admissible PDF investigation dossier |
 | `WS` | `/ws/alerts` | WebSocket feed for real-time alert notifications |
@@ -237,8 +295,8 @@ Interactive OpenAPI documentation is available at `http://localhost:8000/docs`.
 TraceWatt/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py                  # FastAPI application entry & lifecycle events
-│   │   ├── config.py                # Environment configuration & CORS policies
+│   │   ├── main.py                  # FastAPI application entry & MQTT lifecycle hooks
+│   │   ├── config.py                # Environment configuration & MQTT broker settings
 │   │   ├── db.py                    # Database schema, queries, and connection pools
 │   │   ├── models.py                # Data structures and domain models
 │   │   ├── schemas.py               # Pydantic request/response schemas
@@ -257,7 +315,7 @@ TraceWatt/
 │   │       ├── engine_adapter.py    # Bridge between API and ML inference engine
 │   │       ├── feeder_analysis.py   # Downstream energy accounting calculations
 │   │       ├── loss.py              # Financial loss estimation formulas
-│   │       ├── mqtt_service.py      # MQTT subscriber for ESP32 hardware telemetry
+│   │       ├── mqtt_service.py      # MQTT protocol manager (subscriber & publisher)
 │   │       ├── pipeline.py          # Async queue worker and deduplication logic
 │   │       └── report_pdf.py        # ReportLab PDF dossier generation engine
 │   ├── engine/                      # Machine learning and analytical intelligence
@@ -271,13 +329,15 @@ TraceWatt/
 │   │   ├── bootstrap_synthetic.py   # Bootstraps end-to-end dataset
 │   │   ├── generate_synthetic.py    # Generates realistic synthetic AMI datasets
 │   │   ├── load_data.py             # Database loader
-│   │   └── simulator.py             # CLI IoT smart-meter telemetry simulator
-│   ├── tests/                       # Automated backend test suite (139+ tests)
+│   │   ├── simulator.py             # REST-based smart-meter stream simulator
+│   │   └── mqtt_simulator.py        # MQTT-based smart-meter telemetry publisher
+│   ├── tests/                       # Automated backend test suite (141+ tests)
 │   │   ├── conftest.py              # Pytest fixtures and mock client setup
 │   │   ├── test_alerts.py           # Alert dispatch unit tests
 │   │   ├── test_cases.py            # Case lifecycle and triage tests
 │   │   ├── test_engine_scenarios.py # 100% cause scenario coverage tests
 │   │   ├── test_export.py           # PDF generation and JSON report tests
+│   │   ├── test_mqtt.py             # MQTT protocol and queue integration tests
 │   │   ├── test_pipeline.py         # Queue worker and deduplication tests
 │   │   └── test_ws.py               # WebSocket streaming integration tests
 │   └── requirements.txt             # Python dependencies
@@ -360,14 +420,24 @@ npm run dev
 ```
 Open your browser and navigate to `http://localhost:5173` to access the TraceWatt console.
 
+### 3. Running Telemetry Streamers (Optional)
+
+```bash
+# Run REST smart-meter simulator:
+python backend/scripts/simulator.py --num-consumers 50 --delay-ms 100
+
+# Run MQTT smart-meter simulator:
+python backend/scripts/mqtt_simulator.py --broker test.mosquitto.org --num-meters 20 --interval-sec 1.0
+```
+
 ---
 
 ## 🧪 Testing & Quality Assurance
 
-TraceWatt includes a comprehensive test suite across backend logic, scenario edge cases, and frontend API contracts:
+TraceWatt includes a comprehensive test suite across backend logic, scenario edge cases, MQTT protocol, and frontend API contracts:
 
 ```bash
-# Run backend pytest suite (139+ tests covering 100% of diagnostic cause classes)
+# Run backend pytest suite (141+ tests covering 100% of diagnostic cause classes)
 cd backend
 pytest -v
 
@@ -390,7 +460,6 @@ npm run test:browser
 
 ### Roadmap
 - [ ] **Temporal Deep Learning:** Implement lightweight 1D-CNN / Temporal Fusion Transformer (TFT) sidecar for micro-interval waveform analysis.
-- [ ] **Automated Edge Firmware:** Native C++/Arduino firmware package for ESP32 edge deployment with on-device quantization.
 - [ ] **Advanced Active Learning:** Feedback loop incorporating confirmed Lineman field inspection results directly into model retuning.
 - [ ] **GIS / Mapbox Integration:** Real-world geospatial map overlay connecting distribution poles and cable routes.
 
