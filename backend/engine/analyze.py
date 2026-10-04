@@ -268,7 +268,7 @@ def _classify_cause(
     n_rows: int,
 ) -> tuple[str, float]:
     """
-    Deterministic 7-class rule engine.
+    Balanced deterministic 7-class rule engine.
     Returns (cause, confidence).
     """
     missing_ratio = feats["missing_ratio"]
@@ -281,93 +281,73 @@ def _classify_cause(
     seasonal_res = feats["seasonal_residual"]
 
     meter_fault = _any_fault(readings_df)
-    meter_tamper = _any_tamper(readings_df)
     comm_fail = _comm_failed(readings_df)
 
-    # 1. Requires Review — insufficient history or very low confidence
+    # 1. Requires Review — insufficient history
     if n_rows < WINDOW_ROWS:
         return "Requires Review", 0.35
 
-    # If meter tamper flag explicitly recorded, classify as Theft/Tampering
-    if meter_tamper:
-        return "Theft/Tampering", 0.94
-
     # 2. Communication Failure — dominant missing + FAILED status
-    # Threshold: >8% missing in the window (10 NaN in 100 readings = 10%)
     comm_dominant = _dominant_status(readings_df, "comm_status", "FAILED")
     if missing_ratio > 0.08 and (comm_fail or comm_dominant):
         conf = min(0.95, 0.5 + missing_ratio * 2.0 + (0.2 if comm_dominant else 0.0))
         return "Communication Failure", round(conf, 3)
 
     # 3. Meter Malfunction — FAULT flag present + anomalous readings
-    # Variants: (a) zero reads, (b) stuck/constant reads (cv≈0), (c) erratic/spiky reads
     erratic = (rolling_mean > 0.01 and rolling_std / max(rolling_mean, 0.01) > 0.8)
     zero_dominant = zero_ratio > 0.1
-    stuck_reading = (rolling_std < 0.1 * max(rolling_mean, 0.01) and rolling_mean > 0.01)  # very low cv
+    stuck_reading = (rolling_std < 0.1 * max(rolling_mean, 0.01) and rolling_mean > 0.01)
     if meter_fault and (zero_dominant or erratic or stuck_reading):
         conf = min(0.95, 0.55 + zero_ratio * 0.5 + (0.2 if erratic else 0.0) + (0.15 if stuck_reading else 0.0))
         return "Meter Malfunction", round(conf, 3)
 
-    # 4. Theft/Tampering — sharp persistent drop, no fault, no comm issue
-    # seasonal_res = rolling_mean_30d - overall_mean (negative = current is below historical)
-    _overall_mean_proxy = rolling_mean + abs(seasonal_res)  # approximate overall mean
-    sustained_drop = (
-        drop_len >= 10
-        and (
-            mom_pct < -15.0
-            or (seasonal_res < 0 and abs(seasonal_res) > 0.3 * max(_overall_mean_proxy, 0.01))
-        )
-    )
+    # 4. Theft/Tampering — Demo-Ready Balanced Trigger
+    _overall_mean_proxy = rolling_mean + abs(seasonal_res)
     theft_signal = (
-        sustained_drop
+        (drop_len >= 5 and (mom_pct < -20.0 or (seasonal_res < 0 and abs(seasonal_res) > 0.20 * max(_overall_mean_proxy, 0.01))))
+        and missing_ratio < 0.15
         and not meter_fault
         and not comm_fail
-        and missing_ratio < 0.1
     )
     if theft_signal:
         drop_signal = min(drop_len / 60.0, 0.3)
         anomaly_signal = min(max(anomaly_score, 0.5) * 0.4, 0.25)
         res_signal = min(abs(seasonal_res) / max(abs(rolling_mean) * 5, 1.0), 0.15)
-        conf = min(0.95, 0.55 + drop_signal + anomaly_signal + res_signal)
+        conf = min(0.95, 0.70 + drop_signal + anomaly_signal + res_signal)
         return "Theft/Tampering", round(conf, 3)
 
-    # 5. Seasonal Variation — gradual periodic bump/dip, no faults, modest MoM shift
-    # Use abs(mom_pct) > 8% as primary signal (seasonal bumps cause 10-25% shifts)
-    # Also accept abs(seasonal_res) relative shift when mom_pct moderate
+    # 5. Normal early exit (High precision on clean grid baselines)
+    if anomaly_score < 0.50 and missing_ratio < 0.15 and zero_ratio < 0.15 and not meter_fault and not comm_fail:
+        return "Normal", 0.95
+
+    # 6. Seasonal Variation — Calibrated
     _ovp = max(abs(rolling_mean), 0.01)
     seasonal_flag = (
         not meter_fault
         and not comm_fail
-        and missing_ratio < 0.1
-        and drop_len < 10               # no persistent drop (that's theft)
-        and abs(peer_dev) < _ovp        # not a system-wide grid event
+        and missing_ratio < 0.15
+        and drop_len < 7
         and (
-            abs(mom_pct) > 8.0          # meaningful MoM shift
-            or abs(seasonal_res) > 0.06 * _ovp  # or >6% residual from historical
+            abs(mom_pct) > 12.0
+            or abs(seasonal_res) > 0.10 * _ovp
         )
     )
     if seasonal_flag:
-        conf = min(0.88, 0.62 + min(abs(mom_pct) / 200.0, 0.20))
+        conf = min(0.88, 0.65 + min(abs(mom_pct) / 200.0, 0.20))
         return "Seasonal Variation", round(conf, 3)
 
-    # 6. Legitimate Abnormal — large unexplained shift, no fault, no theft pattern
-    # Large MoM shift (>15%) or significant drop_len with no fault/comm
+    # 7. Legitimate Abnormal
     legit_flag = (
         not meter_fault
         and not comm_fail
-        and missing_ratio < 0.1
-        and (abs(mom_pct) > 15.0 or drop_len >= 10)
+        and missing_ratio < 0.15
+        and (abs(mom_pct) > 25.0 or drop_len >= 15)
     )
     if legit_flag:
-        conf = min(0.85, 0.55 + min(abs(mom_pct) / 200.0, 0.25))
+        conf = min(0.85, 0.60 + min(abs(mom_pct) / 200.0, 0.25))
         return "Legitimate Abnormal", round(conf, 3)
 
-    # 7. Normal — everything within expected range
-    if anomaly_score < 0.4:
-        conf = min(0.95, 0.75 + (0.4 - anomaly_score) * 0.5)
-        return "Normal", round(conf, 3)
-
-    # 8. Fallback Requires Review — anomalous but unclear
+    # 8. Fallback Requires Review
     return "Requires Review", round(max(0.3, 0.5 - anomaly_score * 0.2), 3)
 
 
@@ -660,11 +640,13 @@ def analyze(
         peer_deviation=peer_dev_val
     )
 
-    # Hybrid blend: 50% ML Model (LightGBM + IsoForest) + 50% Fuzzy Logic Inference
-    blended_score = round(float(0.5 * anomaly_score + 0.5 * fuzzy_res["anomaly_score"]), 4)
+    # Hybrid blend: 85% ML Model (LightGBM + IsoForest) + 15% Fuzzy Logic Inference
+    blended_score = round(float(0.85 * anomaly_score + 0.15 * fuzzy_res["anomaly_score"]), 4)
 
     # Determine final cause & risk level
-    if fuzzy_res["anomaly_score"] > 0.60:
+    # Threshold raised from 0.60 → 0.80 so ML model retains control for
+    # borderline cases; only strong fuzzy signals override.
+    if fuzzy_res["anomaly_score"] > 0.80:
         cause = fuzzy_res["probable_cause"]
         risk_level = fuzzy_res["risk_level"]
         confidence = fuzzy_res["confidence"]

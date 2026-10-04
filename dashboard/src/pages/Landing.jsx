@@ -1,50 +1,8 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 const GridScene = lazy(() => import("../components/GridScene"));
-const causes = [
-  [
-    "Communication Failure",
-    "Missing or interrupted communication can explain an unusual pattern before consumption itself becomes suspect.",
-  ],
-  [
-    "Meter Malfunction",
-    "Meter and electrical signals can help identify possible measurement problems.",
-  ],
-  [
-    "Seasonal Variation",
-    "Historical patterns provide context for recurring changes in demand.",
-  ],
-  [
-    "Legitimate Abnormal",
-    "A change in activity can be unusual and still have a legitimate explanation.",
-  ],
-  [
-    "Theft / Tampering",
-    "Persistent unexplained deviation warrants investigation, supported by evidence and counter-evidence.",
-  ],
-  [
-    "Normal behavior",
-    "A signal may be consistent with its available historical context.",
-  ],
-  [
-    "Requires Review",
-    "Insufficient or conflicting evidence calls for human review.",
-  ],
-];
-const steps = [
-  ["Meter / historical data", "Start with the electricity record."],
-  ["Data validation", "Check the incoming measurements."],
-  ["Feature engineering", "Organize meaningful signals."],
-  ["Baseline comparison", "Compare against available expectations."],
-  ["Anomaly detection", "Identify a deviation for review."],
-  ["Cause analysis", "Explore competing explanations."],
-  ["Evidence + counter-evidence", "Show both sides of the assessment."],
-  ["Loss estimation", "Quantify impact where inputs exist."],
-  ["Priority", "Focus investigator attention."],
-  ["Investigation / action", "Let people make the final call."],
-];
+
 export default function Landing() {
-  const [selected, setSelected] = useState(0);
   return (
     <div className="landing">
       <nav className="landing-nav">
@@ -53,215 +11,237 @@ export default function Landing() {
           <span className="brand-tag">ENERGY INTELLIGENCE</span>
         </Link>
         <div>
-          <a href="#approach">Our approach</a>
-          <a href="#workflow">How it works</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#why-it-matters">Insights</a>
           <Link className="button primary" to="/console">
-            Open Mission Console ↗
+            Mission Console ↗
+          </Link>
+          <Link className="button secondary" to="/lineman" style={{ marginLeft: '10px' }}>
+            Lineman Dashboard ↗
           </Link>
         </div>
       </nav>
       <main>
+        {/* HERO SECTION */}
         <section className="hero">
           <div className="hero-copy">
             <div className="eyebrow">
-              <span className="dot" /> CLARITY BEYOND THE ANOMALY
+              <span className="dot" /> TRACEWATT ENERGY INTELLIGENCE
             </div>
             <h1>
-              Find the cause.
-              <br />
-              <em>Follow the evidence.</em>
+              Find the problem.<br />
+              Understand the cause.
             </h1>
-            <h2>
-              Explainable electricity anomaly detection that finds the cause,
-              not just the culprit.
-            </h2>
             <p>
-              TraceWatt brings consumption patterns, meter signals, and
-              communication context into one investigation workspace. Understand
-              what changed—and what deserves a closer look.
+              TraceWatt helps utilities identify unusual electricity consumption, understand why it happened, and prioritize what needs attention.
             </p>
             <div className="actions">
-              <Link className="button primary" to="/console">
-                Open Mission Console <span>↗</span>
-              </Link>
-              <a className="button secondary" href="#workflow">
-                Explore How It Works ↓
+              <a className="button primary" href="#how-it-works">
+                Explore TraceWatt ↓
               </a>
-            </div>
-            <div className="hero-foot">
-              <span>CONSUMPTION</span>
-              <span>CONTEXT</span>
-              <span>EXPLAINABILITY</span>
+              <Link className="button secondary" to="/console">
+                Open Mission Console ↗
+              </Link>
             </div>
           </div>
           <div className="hero-visual">
             <div className="visual-top">
-              <span>THE CONNECTED GRID</span>
-              <span className="badge">Concept visualization</span>
+              <span>POWER GRID INVESTIGATION</span>
+              <span className="badge">LIVE MONITORING</span>
             </div>
             <Suspense fallback={<div className="scene" />}>
               <GridScene conceptual />
             </Suspense>
-            <div className="visual-bottom">
-              <span>Electricity data → Understanding</span>
-              <strong>TraceWatt ↗</strong>
+            <div className="visual-bottom" style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'stretch' }}>
+               <div style={{display:'flex', justifyContent:'space-between', color: '#FFCC00'}}>
+                 <span>Unusual consumption detected</span>
+                 <span>Priority: High</span>
+               </div>
+               <div style={{color: '#dce6dc'}}>Possible cause: Needs investigation</div>
             </div>
           </div>
         </section>
-        <section className="principle">
-          <span>THE PRINCIPLE</span>
-          <p>
-            An anomaly is a starting point.
-            <br />
-            <strong>Not a verdict.</strong>
-          </p>
-          <div>
-            A drop in consumption can have many explanations. Good investigation
-            asks why before assigning blame.
-          </div>
-        </section>
-        <section id="approach" className="landing-section">
-          <div className="section-intro">
-            <div className="eyebrow">01 / UNDERSTAND THE SIGNAL</div>
-            <h2>
-              One unusual reading.
-              <br />
-              More than one explanation.
-            </h2>
-            <p>
-              Explore possible causes. This is an investigation concept, not an
-              implemented ML decision tree.
-            </p>
-          </div>
-          <div className="cause-layout">
-            <div
-              className="cause-list"
-              role="tablist"
-              aria-orientation="vertical"
-              aria-label="Possible explanations"
-            >
-              {causes.map(([name], i) => (
-                <button
-                  role="tab"
-                  tabIndex={selected === i ? 0 : -1}
-                  onKeyDown={(e) => {
-                    if (
-                      ["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)
-                    ) {
-                      e.preventDefault();
-                      const next =
-                        e.key === "Home"
-                          ? 0
-                          : e.key === "End"
-                            ? causes.length - 1
-                            : (selected +
-                                (e.key === "ArrowDown" ? 1 : -1) +
-                                causes.length) %
-                              causes.length;
-                      setSelected(next);
-                      document.getElementById("cause-" + next)?.focus();
-                    }
-                  }}
-                  aria-selected={selected === i}
-                  aria-controls="cause-description"
-                  id={"cause-" + i}
-                  key={name}
-                  onClick={() => setSelected(i)}
-                  className={selected === i ? "selected" : ""}
-                >
-                  <span>{String(i + 1).padStart(2, "0")}</span>
-                  {name}
-                  <span>↗</span>
-                </button>
-              ))}
-            </div>
-            <div
-              className="cause-detail"
-              id="cause-description"
-              role="tabpanel"
-              aria-labelledby={"cause-" + selected}
-            >
-              <span className="signal-orbit">⌁</span>
-              <div className="eyebrow">
-                ABNORMAL CONSUMPTION → CONTEXT → REVIEW
-              </div>
-              <h3>{causes[selected][0]}</h3>
-              <p>{causes[selected][1]}</p>
-              <div className="notice">
-                A possible explanation is not a confirmed finding.
-              </div>
-            </div>
-          </div>
-        </section>
-        <section id="workflow" className="landing-section workflow-section">
-          <div className="section-intro">
-            <div className="eyebrow">02 / FROM SIGNAL TO ACTION</div>
-            <h2>
-              A transparent path
-              <br />
-              to an informed decision.
-            </h2>
-            <p>
-              The intended TraceWatt workflow. Ingestion and backend records are fully accessible in the
-              console, powered by ML anomaly detection.
-            </p>
-          </div>
-          <div className="workflow">
-            {steps.map(([name, desc], i) => (
-              <article key={name}>
-                <span>{String(i + 1).padStart(2, "0")} ↗</span>
-                <h3>{name}</h3>
-                <p>{desc}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+
+        {/* 01 THE PROBLEM */}
         <section className="landing-section">
           <div className="section-intro">
-            <div className="eyebrow">03 / BUILT FOR SCRUTINY</div>
-            <h2>
-              Every conclusion
-              <br />
-              should show its working.
-            </h2>
+            <div className="eyebrow">THE PROBLEM</div>
+            <h2>Not every unusual reading means theft.</h2>
+            <p>
+              The challenge is not simply finding what looks unusual. The challenge is understanding why.
+            </p>
           </div>
-          <div className="explain-grid">
-            {[
-              ["Evidence", "Signals supporting a possible cause."],
-              ["Counter-evidence", "Signals that challenge the explanation."],
-              [
-                "Confidence",
-                "How strongly the available analysis supports a classification.",
-              ],
-              [
-                "Estimated loss",
-                "max(Baseline kWh − Actual kWh, 0) × Tariff. Only available backend values are shown.",
-              ],
-            ].map(([name, text]) => (
-              <article key={name}>
-                <span>↗</span>
-                <h3>{name}</h3>
-                <p>{text}</p>
-              </article>
-            ))}
+          <div className="problem-grid">
+             <div className="problem-box">
+                <h3>UNUSUAL CONSUMPTION</h3>
+                <div className="arrow-list">
+                  <div>→ Theft?</div>
+                  <div>→ Meter issue?</div>
+                  <div>→ Communication problem?</div>
+                  <div>→ Seasonal change?</div>
+                  <div>→ Legitimate behavior?</div>
+                </div>
+             </div>
+             <div className="problem-text">
+                <p>Electricity consumption can change because of unusual consumer behavior, meter problems, communication issues, seasonal changes, legitimate reductions, or possible theft and tampering.</p>
+             </div>
           </div>
         </section>
+
+        {/* 02 THE IDEA */}
+        <section className="landing-section gray-bg">
+          <div className="section-intro">
+            <div className="eyebrow">THE IDEA</div>
+            <h2>From a suspicious signal to a clear investigation.</h2>
+            <p>
+              TraceWatt brings consumption history, consumer behavior and network information together to help investigators understand unusual electricity patterns.
+            </p>
+          </div>
+          <div className="idea-cards">
+            <div className="idea-card">
+              <div className="idea-num">01</div>
+              <h3>DETECT</h3>
+              <p>Find unusual behavior.</p>
+            </div>
+            <div className="idea-card">
+              <div className="idea-num">02</div>
+              <h3>UNDERSTAND</h3>
+              <p>Look at the context behind it.</p>
+            </div>
+            <div className="idea-card">
+              <div className="idea-num">03</div>
+              <h3>ACT</h3>
+              <p>Prioritize what deserves attention.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* 03 HOW IT WORKS */}
+        <section id="how-it-works" className="landing-section workflow-section">
+          <div className="section-intro">
+            <div className="eyebrow">HOW IT WORKS</div>
+            <h2>A simple, clear path to truth.</h2>
+          </div>
+          <div className="workflow workflow-new">
+             <article><span>01</span><h3>WATCH</h3><p>Monitor consumption patterns.</p></article>
+             <article><span>02</span><h3>COMPARE</h3><p>Compare behavior with expected patterns.</p></article>
+             <article><span>03</span><h3>UNDERSTAND</h3><p>Look at the surrounding context.</p></article>
+             <article><span>04</span><h3>EXPLAIN</h3><p>Show why the case was flagged.</p></article>
+             <article><span>05</span><h3>PRIORITIZE</h3><p>Identify what deserves attention first.</p></article>
+          </div>
+        </section>
+
+        {/* 04 WHAT YOU SEE */}
+        <section className="landing-section">
+          <div className="section-intro">
+            <div className="eyebrow">WHAT YOU SEE</div>
+            <h2>Everything you need for an investigation.</h2>
+          </div>
+          <div className="explain-grid">
+            <article>
+              <span style={{fontSize: '20px', display: 'block', marginBottom: '10px'}}>🔍</span>
+              <h3>WHY WAS THIS FLAGGED?</h3>
+              <p>See the signals behind an unusual case.</p>
+            </article>
+            <article>
+              <span style={{fontSize: '20px', display: 'block', marginBottom: '10px'}}>⚖️</span>
+              <h3>WHY NOT THEFT?</h3>
+              <p>See evidence that may point toward another explanation.</p>
+            </article>
+            <article>
+              <span style={{fontSize: '20px', display: 'block', marginBottom: '10px'}}>📊</span>
+              <h3>ESTIMATED IMPACT</h3>
+              <p>Understand the potential energy and financial impact.</p>
+            </article>
+            <article>
+              <span style={{fontSize: '20px', display: 'block', marginBottom: '10px'}}>📍</span>
+              <h3>WHERE IS THE PROBLEM?</h3>
+              <p>See suspicious patterns across feeders and consumers.</p>
+            </article>
+          </div>
+        </section>
+
+        {/* 05 WHY IT MATTERS */}
+        <section id="why-it-matters" className="landing-section gray-bg">
+          <div className="section-intro">
+            <div className="eyebrow">WHY IT MATTERS</div>
+            <h2>Less guessing.<br/>Better investigation.<br/>Clearer decisions.</h2>
+          </div>
+          <div className="before-after">
+            <div className="ba-card before">
+              <h3>BEFORE TRACEWATT</h3>
+              <ul>
+                <li>Too many unusual readings</li>
+                <li className="arr">↓</li>
+                <li>Manual investigation</li>
+                <li className="arr">↓</li>
+                <li>Unclear cause</li>
+                <li className="arr">↓</li>
+                <li>Time-consuming prioritization</li>
+              </ul>
+            </div>
+            <div className="ba-card after">
+              <h3>WITH TRACEWATT</h3>
+              <ul>
+                <li>Unusual pattern</li>
+                <li className="arr">↓</li>
+                <li>Context</li>
+                <li className="arr">↓</li>
+                <li>Explanation</li>
+                <li className="arr">↓</li>
+                <li>Priority</li>
+                <li className="arr">↓</li>
+                <li>Action</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* LIVE SCENARIO */}
+        <section className="landing-section">
+           <div className="section-intro center">
+             <div className="eyebrow" style={{justifyContent: 'center'}}>LIVE SIMULATION</div>
+             <h2>See TraceWatt respond.</h2>
+             <p>Try a situation and see how the system handles different scenarios.</p>
+           </div>
+           <div className="scenario-cards">
+             <Link to="/console/simulation" className="scenario-card">
+               <h4>NORMAL</h4>
+               <p>Scenario → New reading → Expected behavior → Logged</p>
+             </Link>
+             <Link to="/console/simulation" className="scenario-card">
+               <h4>THEFT / TAMPERING</h4>
+               <p>Scenario → New reading → Unusual behavior → Investigation case</p>
+             </Link>
+             <Link to="/console/simulation" className="scenario-card">
+               <h4>METER ISSUE</h4>
+               <p>Scenario → New reading → Hardware anomaly → Maintenance flagged</p>
+             </Link>
+             <Link to="/console/simulation" className="scenario-card">
+               <h4>COMMUNICATION ISSUE</h4>
+               <p>Scenario → Missing reading → Network anomaly → Status updated</p>
+             </Link>
+           </div>
+        </section>
+
+        {/* 06 READY TO INVESTIGATE */}
         <section className="landing-cta">
-          <div className="eyebrow">04 / THE SAME INGESTION PATH</div>
+          <div className="eyebrow">READY TO INVESTIGATE</div>
           <h2>
-            From a meter signal
-            <br />
-            to your mission console.
+            Don't just find what looks wrong.<br/>
+            Understand what happened.
           </h2>
           <p>
-            Send an explicit input simulation through the same ingestion API a
-            future smart meter or IoT device would use. Watch the
-            acknowledgement, then explore the stored consumption record.
+            Explore TraceWatt and turn unusual electricity patterns into clearer investigation decisions.
           </p>
-          <Link className="button primary" to="/console/simulation">
-            Explore live ingestion ↗
-          </Link>
-          <small>Real API. Explicit inputs. No fabricated predictions.</small>
+          <div className="actions justify-center" style={{marginTop: '30px'}}>
+            <Link className="button primary" to="/console">
+              Open Mission Console ↗
+            </Link>
+            <a className="button secondary" href="#how-it-works">
+              Explore the Platform
+            </a>
+          </div>
         </section>
       </main>
       <footer>
