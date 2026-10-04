@@ -33,7 +33,7 @@ export default function LinemanDashboard() {
       // Fetch cases and consumers in parallel
       const [casesRes, consumersRes] = await Promise.all([
         request("/cases?limit=1000"),
-        request("/consumers?limit=2000")
+        request("/consumers?limit=1000")
       ]);
       
       // Map consumers by ID for quick feeder/transformer lookup
