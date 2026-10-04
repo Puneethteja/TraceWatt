@@ -1764,7 +1764,6 @@ const pages = {
   Alerts,
   DataView,
   System,
-  Evaluation,
 };
 export default function ConsolePage({ name, ...props }) {
   const Page = pages[name];

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: tracewatt-api
+    env: python
+    repo: https://github.com/araj170805/TraceWatt.git
+    branch: main
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: SEED_ON_START
+        value: "true"
+      - key: PYTHON_VERSION
+        value: 3.10.0
