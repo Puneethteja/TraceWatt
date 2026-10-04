@@ -4,6 +4,7 @@ import Layout from "./components/Layout";
 import Landing from "./pages/Landing";
 const ConsolePage = lazy(() => import("./pages/Console"));
 const Simulation = lazy(() => import("./pages/Simulation"));
+const LinemanDashboard = lazy(() => import("./pages/LinemanDashboard"));
 function ConsoleRoute({ name, ...props }) {
   return <ConsolePage name={name} {...props} />;
 }
@@ -19,6 +20,7 @@ export default function App() {
       >
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/lineman" element={<LinemanDashboard />} />
           <Route path="/console" element={<Layout />}>
             <Route index element={<ConsoleRoute name="Overview" />} />
             <Route
