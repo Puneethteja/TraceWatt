@@ -1704,6 +1704,186 @@ dd {
   box-shadow: 0 4px 14px #223c2410;
 }
 
+/* Consumer Analytics Dashboard */
+.analytics-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.analytics-header {
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.analytics-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.analytics-header p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+.analytics-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.analytics-section {
+  padding: 24px;
+}
+.analytics-section:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
+.analytics-full {
+  padding: 24px;
+  border-top: 1px solid var(--border);
+}
+.analytics-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.analytics-insight {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  line-height: 1.5;
+}
+.donut-container {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+.donut-svg-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+.donut-svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+.donut-segment {
+  fill: transparent;
+  stroke-width: 16;
+  transition: stroke-width 0.2s, stroke-opacity 0.2s;
+  cursor: pointer;
+}
+.donut-segment:hover {
+  stroke-width: 20;
+}
+.donut-center {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.donut-center strong {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+.donut-center span {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  transition: opacity 0.2s;
+  cursor: default;
+}
+.legend-item:hover {
+  opacity: 0.8;
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.legend-name {
+  flex: 1;
+}
+.legend-count {
+  font-weight: 600;
+}
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 30px;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  transition: opacity 0.2s;
+}
+.bar-row:hover {
+  opacity: 0.8;
+}
+.bar-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bar-track {
+  height: 8px;
+  background: var(--soft);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.4s ease-out;
+}
+.bar-count {
+  font-weight: 600;
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .analytics-body {
+    grid-template-columns: 1fr;
+  }
+  .analytics-section:not(:last-child) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .donut-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 /* Landing Page Additions */
 .gray-bg {
   background: #eff3ec;
