@@ -16,6 +16,9 @@ export default function Landing() {
           <Link className="button primary" to="/console">
             Mission Console ↗
           </Link>
+          <Link className="button secondary" to="/lineman" style={{ marginLeft: '10px' }}>
+            Lineman Dashboard ↗
+          </Link>
         </div>
       </nav>
       <main>
