@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
@@ -11,6 +11,7 @@ class ReadingIn(BaseModel):
     power_kw: Optional[float] = None
     meter_status: Optional[str] = None
     comm_status: Optional[str] = None
+    is_simulation: Optional[bool] = False
 
 class ReadingAck(BaseModel):
     stored: bool
@@ -32,6 +33,7 @@ class Detection(BaseModel):
     recommended_action: str
 
 class CaseOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: Optional[int] = None
     case_id: Optional[str] = None
     consumer_id: str
@@ -112,6 +114,8 @@ class FeederOut(BaseModel):
     total_unexplained_loss_pct: Optional[float] = 0.0
     unexplained_loss_pct: Optional[float] = 0.0
     cluster_flag: Optional[bool] = False
+    energy_in: Optional[float] = None
+    energy_metered: Optional[float] = None
 
 class FeederSummaryOut(BaseModel):
     feeder_id: str
@@ -119,3 +123,5 @@ class FeederSummaryOut(BaseModel):
     high_risk_consumers: int
     total_consumption: float
     avg_loss_pct: float
+    energy_in: Optional[float] = None
+    energy_metered: Optional[float] = None

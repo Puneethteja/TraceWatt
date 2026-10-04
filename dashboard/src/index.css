@@ -266,12 +266,37 @@ fieldset {
   color: var(--success);
   border: 1px solid rgba(52,199,89,0.2);
 }
+.badge.unread {
+  background: var(--warning-soft);
+  color: var(--warning);
+  border: 1px solid rgba(255,204,0,0.2);
+}
+.badge.read {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
 .badge.paused {
   background: var(--warning-soft);
   color: var(--warning);
 }
 .badge.stopped {
   background: rgba(255, 255, 255, 0.05);
+}
+/* Alerts notification in Light Mode: Vibrant Red button & badge */
+.app:not(.dark-theme) .topbar-alerts-btn {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border: 1px solid #b91c1c !important;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35) !important;
+}
+.app:not(.dark-theme) .topbar-alerts-btn:hover {
+  background: #b91c1c !important;
+  color: #ffffff !important;
+}
+.app:not(.dark-theme) .alert-sidebar-badge {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border: 1px solid #b91c1c !important;
 }
 .panel {
   background: var(--panel);

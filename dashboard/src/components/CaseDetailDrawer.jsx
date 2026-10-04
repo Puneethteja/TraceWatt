@@ -92,6 +92,7 @@ export default function CaseDetailDrawer({ consumerId, onClose }) {
           ...prev,
         ]);
         setSaveMessage('Status updated successfully');
+        window.dispatchEvent(new Event("tracewatt-case-updated"));
       }
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (err) {

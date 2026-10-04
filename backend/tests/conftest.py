@@ -1,11 +1,9 @@
-"""
-backend/tests/conftest.py
-==========================
-Shared pytest configuration and path setup for TraceWatt tests.
-"""
-
+import os
 import sys
 from pathlib import Path
+
+# Use isolated test database for pytest fixtures so tracewatt.db is preserved
+os.environ["DATABASE_URL"] = "sqlite:///./test_tracewatt.db"
 
 # Ensure the backend directory is on sys.path for all test modules
 _BACKEND = Path(__file__).resolve().parents[1]

@@ -1,6 +1,13 @@
 import os
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./tracewatt.db")
+def _get_database_url():
+    env_url = os.getenv("DATABASE_URL")
+    if env_url:
+        return env_url
+    root_db = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "tracewatt.db"))
+    return f"sqlite:///{root_db}"
+
+DATABASE_URL = _get_database_url()
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 SEED_ON_START = os.getenv("SEED_ON_START", "false").lower() in ("true", "1", "yes")
 DATA_DIR = os.getenv("DATA_DIR", "./data")

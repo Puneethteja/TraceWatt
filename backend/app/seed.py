@@ -13,7 +13,7 @@ from app.config import DATABASE_URL, DATA_DIR
 from app.db import init_db
 from app.models import Feeder, Transformer, Consumer, Reading, Baseline, Case, Alert, FeederSummary
 
-def seed_database():
+def seed_database(force: bool = False):
     print("[Seed] Initializing database tables...")
     init_db()
 
@@ -22,13 +22,39 @@ def seed_database():
     db = SessionLocal()
 
     try:
+        if force:
+            print("[Seed] Force flag enabled: clearing existing data...")
+            db.query(Alert).delete()
+            db.query(Case).delete()
+            db.query(Reading).delete()
+            db.query(Baseline).delete()
+            db.query(Consumer).delete()
+            db.query(Transformer).delete()
+            db.query(FeederSummary).delete()
+            db.query(Feeder).delete()
+            db.commit()
+
         # Check if consumers already exist
         existing_consumers_count = db.query(Consumer).count()
         if existing_consumers_count > 0:
             print(f"[Seed] Database already contains {existing_consumers_count} consumers. Skipping seed.")
             return
 
-        processed_dir = os.path.join(DATA_DIR, "processed")
+        # Robustly locate processed data directory
+        processed_candidates = [
+            os.path.join(DATA_DIR, "processed"),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "processed")),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "backend", "data", "processed")),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data", "processed")),
+        ]
+        processed_dir = None
+        for cand in processed_candidates:
+            if os.path.exists(os.path.join(cand, "consumers_synthetic.csv")):
+                processed_dir = cand
+                break
+        if not processed_dir:
+            processed_dir = os.path.join(DATA_DIR, "processed")
+
         consumers_csv = os.path.join(processed_dir, "consumers_synthetic.csv")
         labels_csv = os.path.join(processed_dir, "labels.csv")
         readings_parquet = os.path.join(processed_dir, "synthetic_readings.parquet")
@@ -38,28 +64,40 @@ def seed_database():
             _seed_default_data(db)
             return
 
-        print(f"[Seed] Loading synthetic data from {processed_dir}...")
+        print(f"[Seed] Loading processed data from {processed_dir}...")
         consumers_df = pd.read_csv(consumers_csv)
+        # Filter for consumers with valid grid topology
+        if "feeder_id" in consumers_df.columns and "transformer_id" in consumers_df.columns:
+            valid_mask = consumers_df["feeder_id"].notna() & consumers_df["transformer_id"].notna()
+            if valid_mask.sum() >= 300:
+                consumers_df = consumers_df[valid_mask]
         labels_df = pd.read_csv(labels_csv) if os.path.exists(labels_csv) else pd.DataFrame()
 
-        # Limit to 300 consumers for fast database initialization and high responsiveness
-        consumers_df = consumers_df.head(300)
+        # Sample 300 random consumers from processed dataset for balanced grid representation
+        if len(consumers_df) > 300:
+            consumers_df = consumers_df.sample(n=300, random_state=42).reset_index(drop=True)
+
+        # Map to simple clean sequential IDs: CUS_000, CUS_001, ..., CUS_299
+        orig_ids = list(consumers_df["consumer_id"])
+        id_map = {orig: f"CUS_{i:03d}" for i, orig in enumerate(orig_ids)}
+        consumers_df["consumer_id"] = consumers_df["consumer_id"].map(id_map)
         consumer_ids_set = set(consumers_df["consumer_id"])
 
         # 1. Seed Feeders
-        unique_feeders = consumers_df["feeder_id"].dropna().unique()
+        unique_feeders = [f for f in consumers_df["feeder_id"].dropna().unique() if str(f) != 'nan']
         feeder_objs = []
         for idx, f_id in enumerate(unique_feeders):
-            feeder_objs.append(Feeder(id=f_id, name=f"Feeder {f_id} (Grid Sector {idx+1:02d})"))
+            feeder_objs.append(Feeder(id=str(f_id), name=f"Feeder {f_id} (Grid Sector {idx+1:02d})"))
         db.bulk_save_objects(feeder_objs)
         db.commit()
         print(f"[Seed] Inserted {len(unique_feeders)} feeders.")
 
         # 2. Seed Transformers
-        unique_tx = consumers_df[["transformer_id", "feeder_id"]].drop_duplicates()
+        unique_tx = consumers_df[["transformer_id", "feeder_id"]].dropna().drop_duplicates()
+        unique_tx = unique_tx[(unique_tx["transformer_id"].astype(str) != 'nan') & (unique_tx["feeder_id"].astype(str) != 'nan')]
         tx_objs = []
         for _, row in unique_tx.iterrows():
-            tx_objs.append(Transformer(id=row["transformer_id"], feeder_id=row["feeder_id"]))
+            tx_objs.append(Transformer(id=str(row["transformer_id"]), feeder_id=str(row["feeder_id"])))
         db.bulk_save_objects(tx_objs)
         db.commit()
         print(f"[Seed] Inserted {len(unique_tx)} transformers.")
@@ -81,12 +119,19 @@ def seed_database():
         if os.path.exists(readings_parquet):
             print(f"[Seed] Loading readings parquet...")
             readings_df = pd.read_parquet(readings_parquet)
-            readings_df = readings_df[readings_df["consumer_id"].isin(consumer_ids_set)]
+            readings_df = readings_df[readings_df["consumer_id"].isin(id_map.keys())].copy()
+            readings_df["consumer_id"] = readings_df["consumer_id"].map(id_map)
+
+            # Map generated_kwh to kwh if needed
+            if "generated_kwh" in readings_df.columns and "kwh" not in readings_df.columns:
+                readings_df = readings_df.rename(columns={"generated_kwh": "kwh"})
+            elif "generated_kwh" in readings_df.columns:
+                readings_df["kwh"] = readings_df["generated_kwh"]
             
-            # Take recent 60 days of readings per consumer for performance
+            # Take recent 120 days of readings per consumer for full analytical window
             readings_df["ts_dt"] = pd.to_datetime(readings_df["ts"])
             max_ts = readings_df["ts_dt"].max()
-            start_ts = max_ts - pd.Timedelta(days=60)
+            start_ts = max_ts - pd.Timedelta(days=120)
             readings_df = readings_df[readings_df["ts_dt"] >= start_ts].sort_values("ts_dt")
 
             reading_objs = []
@@ -95,10 +140,27 @@ def seed_database():
             for cid, group in readings_df.groupby("consumer_id"):
                 group = group.sort_values("ts_dt")
                 kwh_series = group["kwh"].fillna(0.0).values
-                rolling_baseline = group["kwh"].rolling(14, min_periods=1).mean().fillna(30.0).values
+                max_kwh = float(np.nanmax(kwh_series)) if len(kwh_series) > 0 else 0.0
+                all_zeros = max_kwh <= 0.01
+
+                rolling_baseline = group["kwh"].rolling(14, min_periods=1).mean().fillna(10.5).values
+
+                seed_idx = int("".join([c for c in cid if c.isdigit()]) or "42")
+                np.random.seed(seed_idx)
 
                 for idx, row in enumerate(group.itertuples()):
                     kwh_val = float(row.kwh) if not pd.isna(row.kwh) else 0.0
+                    base_val = float(rolling_baseline[idx]) if idx < len(rolling_baseline) else 10.5
+
+                    if all_zeros or base_val <= 0.01:
+                        day_cycle = np.sin(2 * np.pi * idx / 7)
+                        month_cycle = np.cos(2 * np.pi * idx / 60)
+                        noise = np.random.normal(0, 0.8)
+                        base_val = round(max(5.0, 10.5 + 1.8 * day_cycle + 1.2 * month_cycle), 2)
+                        kwh_val = round(max(2.0, base_val + noise), 2)
+                    elif base_val < 5.0:
+                        base_val = max(5.0, base_val)
+
                     reading_objs.append(Reading(
                         consumer_id=cid,
                         ts=row.ts_dt.to_pydatetime(),
@@ -113,7 +175,7 @@ def seed_database():
                     baseline_objs.append(Baseline(
                         consumer_id=cid,
                         ts=row.ts_dt.to_pydatetime(),
-                        expected_kwh=round(float(rolling_baseline[idx]), 2)
+                        expected_kwh=round(base_val, 2)
                     ))
 
             db.bulk_save_objects(reading_objs)
@@ -125,7 +187,9 @@ def seed_database():
         labels_map = {}
         if not labels_df.empty:
             for _, row in labels_df.iterrows():
-                labels_map[row["consumer_id"]] = row
+                orig_cid = row["consumer_id"]
+                if orig_cid in id_map:
+                    labels_map[id_map[orig_cid]] = row
 
         case_objs = []
         alert_objs = []
@@ -144,44 +208,44 @@ def seed_database():
                 score = round(float(np.random.uniform(0.82, 0.98)), 2)
                 confidence = round(float(np.random.uniform(0.88, 0.96)), 2)
                 estimated_loss = round(float(np.random.uniform(15000, 52000)), 2)
-                evidence = '["Abrupt 54% drop in active power without load reduction.", "Feeder aggregate balance shows corresponding gap."]'
-                counter_evidence = '["Meter internal clock sync verified.", "No historical solar net metering installed."]'
-                action = "Dispatch field inspection unit to verify terminal junction seals."
+                evidence = '["Abrupt drop in electricity usage without corresponding load reduction.", "Neighboring properties on this feeder continue normal consumption."]'
+                counter_evidence = '["Smart meter clock synchronization verified and accurate.", "Meter communication link active with no network outage."]'
+                action = "Dispatch field technician to inspect meter enclosure and verify junction seals."
             elif true_cause in ["Meter Malfunction", "METER"]:
                 risk_level = "Medium"
                 cause = "Meter Malfunction"
                 score = round(float(np.random.uniform(0.65, 0.81)), 2)
                 confidence = round(float(np.random.uniform(0.75, 0.89)), 2)
                 estimated_loss = round(float(np.random.uniform(5000, 18000)), 2)
-                evidence = '["Zero reading sequence registered during peak load hours.", "Voltage telemetry shows active supply."]'
-                counter_evidence = '["No physical enclosure tamper log recorded."]'
-                action = "Schedule meter diagnostic team for recalibration."
+                evidence = '["Zero electricity consumption registered during active hours.", "Line voltage confirms electricity supply was present."]'
+                counter_evidence = '["Smart meter communication link is stable with no network dropouts.", "No physical enclosure tamper log recorded."]'
+                action = "Schedule meter technician for hardware diagnostics and sensor recalibration."
             elif true_cause in ["Communication Failure", "COMM"]:
                 risk_level = "Medium"
                 cause = "Communication Failure"
                 score = round(float(np.random.uniform(0.50, 0.64)), 2)
                 confidence = round(float(np.random.uniform(0.70, 0.85)), 2)
                 estimated_loss = round(float(np.random.uniform(2000, 8000)), 2)
-                evidence = '["Intermittent SIM gateway ping timeout.", "Packet retransmission threshold exceeded."]'
-                counter_evidence = '["Last manual index reading matches transformer total."]'
-                action = "Reset cellular modem interface and test signal strength."
+                evidence = '["Repeated transmission timeouts and missing meter data packets.", "Cellular gateway reports connection drops from meter."]'
+                counter_evidence = '["Meter hardware diagnostics showed normal status prior to signal loss.", "No physical tamper detected on the meter box."]'
+                action = "Inspect cellular modem antenna and reset communication module."
             elif true_cause in ["Legitimate Abnormal", "LEGIT", "Seasonal Variation", "SEASONAL"]:
                 risk_level = "Low"
                 cause = true_cause if "Seasonal" in true_cause else "Legitimate Load Change"
                 score = round(float(np.random.uniform(0.25, 0.49)), 2)
                 confidence = round(float(np.random.uniform(0.80, 0.92)), 2)
                 estimated_loss = 0.0
-                evidence = '["HVAC load variance matches ambient temperature series."]'
-                counter_evidence = '["Peer consumer group exhibits identical seasonal slope."]'
-                action = "Update consumer load profile baseline."
+                evidence = '["Electricity usage shift aligns with regional seasonal temperature changes."]'
+                counter_evidence = '["Nearby consumers on the same feeder exhibit the same consumption pattern."]'
+                action = "Update consumer baseline profile to account for seasonal shift."
             else:
                 risk_level = "Low"
                 cause = "Normal Pattern"
                 score = round(float(np.random.uniform(0.05, 0.24)), 2)
                 confidence = round(float(np.random.uniform(0.90, 0.99)), 2)
                 estimated_loss = 0.0
-                evidence = '["Telemetry inline with historical 30-day baseline."]'
-                counter_evidence = '["All diagnostic checks passed."]'
+                evidence = '["Electricity usage is consistent with historical baseline patterns."]'
+                counter_evidence = '["All diagnostic sensors and network links report normal operation."]'
                 action = "No action required."
 
             status = statuses[idx % len(statuses)] if risk_level != "Low" else "Closed"
@@ -244,6 +308,22 @@ def seed_database():
         db.commit()
         print(f"[Seed] Inserted {len(feeder_summary_objs)} feeder summary records.")
 
+        # Ensure database is mirrored across both root and backend directory paths
+        db_path = DATABASE_URL.replace("sqlite:///", "")
+        abs_db = os.path.abspath(db_path)
+        candidates = [
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "tracewatt.db")),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tracewatt.db")),
+        ]
+        import shutil
+        for cand in candidates:
+            if cand != abs_db and os.path.exists(abs_db):
+                try:
+                    shutil.copy2(abs_db, cand)
+                    print(f"[Seed] Synced database mirror to: {cand}")
+                except Exception as sync_err:
+                    print(f"[Seed Warning] Could not sync mirror {cand}: {sync_err}")
+
         print("[Seed] Database seeding completed successfully.")
 
     except Exception as e:
@@ -264,24 +344,24 @@ def _seed_default_data(db):
     db.commit()
 
     consumers = [
-        Consumer(id="CONS-001", category="residential", feeder_id="FDR_01", transformer_id="TX_001"),
-        Consumer(id="CONS-002", category="commercial", feeder_id="FDR_01", transformer_id="TX_001"),
-        Consumer(id="CONS-003", category="industrial", feeder_id="FDR_02", transformer_id="TX_002")
+        Consumer(id="CUS_000", category="residential", feeder_id="FDR_01", transformer_id="TX_001"),
+        Consumer(id="CUS_001", category="commercial", feeder_id="FDR_01", transformer_id="TX_001"),
+        Consumer(id="CUS_002", category="industrial", feeder_id="FDR_02", transformer_id="TX_002")
     ]
     db.bulk_save_objects(consumers)
     db.commit()
 
     cases = [
         Case(
-            consumer_id="CONS-001", status="Under Review", risk_level="High", cause="Theft/Tampering",
+            consumer_id="CUS_000", status="Under Review", risk_level="High", cause="Theft/Tampering",
             anomaly_score=0.92, confidence=0.91, first_flagged_at=datetime.utcnow() - timedelta(days=5),
             last_updated_at=datetime.utcnow(), estimated_loss=18450.0, priority=1.0,
-            evidence='["Abrupt 54% drop in active power without load reduction."]',
+            evidence='["Abrupt drop in electricity usage without corresponding load reduction."]',
             counter_evidence='["Meter internal clock sync verified."]',
             recommended_action="Dispatch field inspection unit to verify terminal junction seals."
         ),
         Case(
-            consumer_id="CONS-002", status="New", risk_level="Medium", cause="Meter Malfunction",
+            consumer_id="CUS_001", status="New", risk_level="Medium", cause="Meter Malfunction",
             anomaly_score=0.74, confidence=0.85, first_flagged_at=datetime.utcnow() - timedelta(days=2),
             last_updated_at=datetime.utcnow(), estimated_loss=7200.0, priority=2.0,
             evidence='["Zero reading registered during peak operational hours."]',
@@ -292,12 +372,13 @@ def _seed_default_data(db):
     db.bulk_save_objects(cases)
 
     alerts = [
-        Alert(consumer_id="CONS-001", risk_level="High", cause="Theft/Tampering", message="Consumer CONS-001 flagged for High risk due to Theft/Tampering.", is_read=False),
-        Alert(consumer_id="CONS-002", risk_level="Medium", cause="Meter Malfunction", message="Consumer CONS-002 flagged for Medium risk due to Meter Malfunction.", is_read=False)
+        Alert(consumer_id="CUS_000", risk_level="High", cause="Theft/Tampering", message="Consumer CUS_000 flagged for High risk due to Theft/Tampering.", is_read=False),
+        Alert(consumer_id="CUS_001", risk_level="Medium", cause="Meter Malfunction", message="Consumer CUS_001 flagged for Medium risk due to Meter Malfunction.", is_read=False)
     ]
     db.bulk_save_objects(alerts)
     db.commit()
     print("[Seed] Fallback default seed data successfully created.")
 
 if __name__ == "__main__":
-    seed_database()
+    force_flag = "--force" in sys.argv or "-f" in sys.argv
+    seed_database(force=force_flag)

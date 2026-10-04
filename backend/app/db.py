@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
-from .models import Base, Consumer, Case, Reading, Baseline, Feeder, Transformer, FeederSummary, Alert, PipelineMetric, CaseEvent
+from .models import Base, Consumer, Case, Reading, Baseline, Feeder, Transformer, FeederSummary, Alert, PipelineMetric, CaseEvent, TransformerReading
 from .config import DATABASE_URL
 from datetime import datetime, timedelta
 
@@ -51,9 +51,45 @@ def list_consumers(risk=None, feeder=None, transformer=None, category=None, limi
     finally:
         db.close()
 
+def resolve_consumer_id(db, consumer_id: str) -> str:
+    """
+    Normalizes and resolves consumer ID aliases (e.g. '200' -> 'CUS_200', '111' -> 'CUS_111',
+    'cus_200' -> 'CUS_200', 'CUS200' -> 'CUS_200').
+    """
+    if not consumer_id:
+        return consumer_id
+    exists = db.query(Consumer.id).filter(Consumer.id == consumer_id).first()
+    if exists:
+        return exists[0]
+
+    clean = str(consumer_id).strip()
+    exists = db.query(Consumer.id).filter(Consumer.id.ilike(clean)).first()
+    if exists:
+        return exists[0]
+
+    if clean.isdigit():
+        zfilled = f"CUS_{int(clean):03d}"
+        exists = db.query(Consumer.id).filter(Consumer.id == zfilled).first()
+        if exists:
+            return exists[0]
+        unpadded = f"CUS_{clean}"
+        exists = db.query(Consumer.id).filter(Consumer.id == unpadded).first()
+        if exists:
+            return exists[0]
+
+    digits = "".join([c for c in clean if c.isdigit()])
+    if digits:
+        zfilled = f"CUS_{int(digits):03d}"
+        exists = db.query(Consumer.id).filter(Consumer.id == zfilled).first()
+        if exists:
+            return exists[0]
+
+    return consumer_id
+
 def get_consumer_detail(consumer_id):
     db = SessionLocal()
     try:
+        consumer_id = resolve_consumer_id(db, consumer_id)
         result = db.query(Consumer, Case).outerjoin(Case, Consumer.id == Case.consumer_id).filter(Consumer.id == consumer_id).first()
         if not result:
             return None
@@ -79,6 +115,7 @@ def get_consumer_detail(consumer_id):
 def get_case(consumer_id):
     db = SessionLocal()
     try:
+        consumer_id = resolve_consumer_id(db, consumer_id)
         case = db.query(Case).filter(Case.consumer_id == consumer_id).first()
         return case
     finally:
@@ -93,9 +130,9 @@ def list_cases(status=None, risk=None, limit=200, offset=0):
         if risk and risk != "All":
             query = query.filter(Case.risk_level == risk)
         
-        results = query.order_by(Case.priority.asc(), Case.id.asc()).offset(offset).limit(limit).all()
+        results = query.order_by(Case.priority.desc(), Case.id.asc()).offset(offset).limit(limit).all()
         cases = []
-        for rank, case in enumerate(results, start=1):
+        for rank, case in enumerate(results, start=1 + offset):
             cases.append({
                 "id": case.id,
                 "case_id": f"CASE-{case.consumer_id.replace('SYN_', '')}",
@@ -113,7 +150,7 @@ def list_cases(status=None, risk=None, limit=200, offset=0):
                 "counter_evidence": case.counter_evidence,
                 "recommended_action": case.recommended_action,
                 "estimated_loss": case.estimated_loss or 0.0,
-                "priority_rank": int(case.priority) if case.priority else rank,
+                "priority_rank": rank,
                 "priority": case.priority
             })
         return cases
@@ -123,6 +160,7 @@ def list_cases(status=None, risk=None, limit=200, offset=0):
 def get_consumption(consumer_id, start=None, end=None, resample="D"):
     db = SessionLocal()
     try:
+        consumer_id = resolve_consumer_id(db, consumer_id)
         query = db.query(Reading).filter(Reading.consumer_id == consumer_id)
         if start:
             query = query.filter(Reading.ts >= start)
@@ -154,6 +192,7 @@ def get_consumption(consumer_id, start=None, end=None, resample="D"):
 def get_baseline(consumer_id):
     db = SessionLocal()
     try:
+        consumer_id = resolve_consumer_id(db, consumer_id)
         baselines = db.query(Baseline).filter(Baseline.consumer_id == consumer_id).order_by(Baseline.ts).all()
         return [{"ts": b.ts.isoformat(), "expected_kwh": b.expected_kwh, "baseline_kwh": b.expected_kwh} for b in baselines]
     finally:
@@ -162,6 +201,7 @@ def get_baseline(consumer_id):
 def update_case_status(consumer_id, status, note=None):
     db = SessionLocal()
     try:
+        consumer_id = resolve_consumer_id(db, consumer_id)
         case = db.query(Case).filter(Case.consumer_id == consumer_id).first()
         if case:
             case.status = status
@@ -192,20 +232,47 @@ def list_feeders():
             cons_ids = [c.id for c in consumers]
             high_risk_count = db.query(Case).filter(Case.consumer_id.in_(cons_ids), Case.risk_level == "High").count() if cons_ids else 0
             
-            # Summary stats
+            # Real calculation for loss_pct
+            txs = db.query(Transformer).filter(Transformer.feeder_id == f.id).all()
+            tx_ids = [t.id for t in txs]
+            from sqlalchemy.sql import func
+            energy_in = db.query(func.sum(TransformerReading.kwh)).filter(TransformerReading.transformer_id.in_(tx_ids)).scalar() or 0.0
+            energy_metered = db.query(func.sum(Reading.kwh)).filter(Reading.consumer_id.in_(cons_ids)).scalar() or 0.0
+            
             summary = db.query(FeederSummary).filter(FeederSummary.feeder_id == f.id).first()
-            loss_pct = summary.avg_loss_pct if summary else round(float(high_risk_count * 2.5 + 3.2), 1)
+            if energy_in > 0:
+                loss_pct = ((energy_in - energy_metered) / energy_in) * 100.0
+            elif summary and summary.avg_loss_pct is not None:
+                loss_pct = summary.avg_loss_pct
+            elif summary and summary.unexplained_loss_pct is not None:
+                loss_pct = summary.unexplained_loss_pct
+            else:
+                loss_pct = 0.0
+
+            if energy_in > 0:
+                calc_energy_in = energy_in
+                calc_energy_met = energy_metered
+            elif summary and summary.energy_in_kwh and summary.energy_in_kwh > 0:
+                calc_energy_in = summary.energy_in_kwh
+                calc_energy_met = summary.energy_metered_kwh or (summary.total_consumption or 0.0)
+            else:
+                total_kwh = energy_metered if energy_metered > 0 else (summary.total_consumption if summary and summary.total_consumption else 0.0)
+                loss_ratio = max(0.0, min(0.95, loss_pct / 100.0))
+                calc_energy_met = total_kwh
+                calc_energy_in = round(total_kwh / (1.0 - loss_ratio), 2) if loss_ratio < 0.95 else round(total_kwh * 1.15, 2)
             
             result.append({
                 "id": f.id,
                 "feeder_id": f.id,
                 "name": f.name,
                 "transformer_count": tx_count or 4,
-                "consumer_count": len(consumers),
-                "high_risk_consumers": high_risk_count,
-                "total_unexplained_loss_pct": loss_pct,
-                "unexplained_loss_pct": loss_pct,
-                "cluster_flag": high_risk_count > 2
+                "consumer_count": len(consumers) if consumers else (summary.total_consumers if summary else 0),
+                "high_risk_consumers": high_risk_count if high_risk_count > 0 else (summary.high_risk_consumers if summary else 0),
+                "total_unexplained_loss_pct": round(loss_pct, 2),
+                "unexplained_loss_pct": round(loss_pct, 2),
+                "cluster_flag": loss_pct > 15.0,
+                "energy_in": round(calc_energy_in, 2),
+                "energy_metered": round(calc_energy_met, 2)
             })
         return result
     finally:
@@ -214,17 +281,67 @@ def list_feeders():
 def get_feeder_summary(transformer_id=None, feeder_id=None):
     db = SessionLocal()
     try:
-        query = db.query(FeederSummary)
+        query = db.query(Feeder)
         if feeder_id:
-            query = query.filter(FeederSummary.feeder_id == feeder_id)
-        results = query.all()
-        return [{
-            "feeder_id": s.feeder_id,
-            "total_consumers": s.total_consumers,
-            "high_risk_consumers": s.high_risk_consumers,
-            "total_consumption": s.total_consumption,
-            "avg_loss_pct": s.avg_loss_pct
-        } for s in results]
+            query = query.filter(Feeder.id == feeder_id)
+        elif transformer_id:
+            tx = db.query(Transformer).filter(Transformer.id == transformer_id).first()
+            if tx and tx.feeder_id:
+                query = query.filter(Feeder.id == tx.feeder_id)
+            
+        results = []
+        for feeder in query.all():
+            tx_query = db.query(Transformer).filter(Transformer.feeder_id == feeder.id)
+            if transformer_id:
+                tx_query = tx_query.filter(Transformer.id == transformer_id)
+            txs = tx_query.all()
+            tx_ids = [t.id for t in txs]
+            
+            consumer_query = db.query(Consumer).filter(Consumer.feeder_id == feeder.id)
+            if transformer_id:
+                consumer_query = consumer_query.filter(Consumer.transformer_id == transformer_id)
+            consumers = consumer_query.all()
+            cons_ids = [c.id for c in consumers]
+            
+            high_risk = db.query(Case).filter(Case.consumer_id.in_(cons_ids), Case.risk_level == "High").count() if cons_ids else 0
+            
+            from sqlalchemy.sql import func
+            energy_in = db.query(func.sum(TransformerReading.kwh)).filter(TransformerReading.transformer_id.in_(tx_ids)).scalar() or 0.0
+            energy_metered = db.query(func.sum(Reading.kwh)).filter(Reading.consumer_id.in_(cons_ids)).scalar() or 0.0
+            
+            summary = db.query(FeederSummary).filter(FeederSummary.feeder_id == feeder.id).first()
+            if energy_in > 0:
+                unexplained_loss_pct = ((energy_in - energy_metered) / energy_in) * 100.0
+            elif summary and summary.avg_loss_pct is not None:
+                unexplained_loss_pct = summary.avg_loss_pct
+            elif summary and summary.unexplained_loss_pct is not None:
+                unexplained_loss_pct = summary.unexplained_loss_pct
+            else:
+                unexplained_loss_pct = 0.0
+                
+            total_kwh = energy_metered if energy_metered > 0 else (summary.total_consumption if summary and summary.total_consumption else 0.0)
+            
+            if energy_in > 0:
+                calc_energy_in = energy_in
+                calc_energy_met = energy_metered
+            elif summary and summary.energy_in_kwh and summary.energy_in_kwh > 0:
+                calc_energy_in = summary.energy_in_kwh
+                calc_energy_met = summary.energy_metered_kwh or total_kwh
+            else:
+                loss_ratio = max(0.0, min(0.95, unexplained_loss_pct / 100.0))
+                calc_energy_met = total_kwh
+                calc_energy_in = round(total_kwh / (1.0 - loss_ratio), 2) if loss_ratio < 0.95 else round(total_kwh * 1.15, 2)
+                
+            results.append({
+                "feeder_id": feeder.id,
+                "total_consumers": len(consumers) if consumers else (summary.total_consumers if summary else 0),
+                "high_risk_consumers": high_risk if high_risk > 0 else (summary.high_risk_consumers if summary else 0),
+                "total_consumption": round(total_kwh, 2),
+                "avg_loss_pct": round(unexplained_loss_pct, 2),
+                "energy_in": round(calc_energy_in, 2),
+                "energy_metered": round(calc_energy_met, 2)
+            })
+        return results
     finally:
         db.close()
 
@@ -265,6 +382,27 @@ def list_alerts(since_id=0, limit=50):
             "ts": a.created_at.isoformat() if a.created_at else None,
             "created_at": a.created_at.isoformat() if a.created_at else None
         } for a in alerts]
+    finally:
+        db.close()
+
+def update_alert_read_status(alert_id: int, is_read: bool = True) -> bool:
+    db = SessionLocal()
+    try:
+        alert = db.query(Alert).filter(Alert.id == alert_id).first()
+        if alert:
+            alert.is_read = is_read
+            db.commit()
+            return True
+        return False
+    finally:
+        db.close()
+
+def mark_all_alerts_read() -> int:
+    db = SessionLocal()
+    try:
+        updated = db.query(Alert).filter(Alert.is_read == False).update({"is_read": True})
+        db.commit()
+        return updated
     finally:
         db.close()
 
@@ -373,16 +511,24 @@ def export_cases(filters=None):
 def insert_reading(reading) -> bool:
     db = SessionLocal()
     try:
+        ts_val = reading.ts
+        if isinstance(ts_val, datetime) and ts_val.tzinfo is not None:
+            ts_val = ts_val.replace(tzinfo=None)
+        elif isinstance(ts_val, str):
+            from dateutil import parser
+            dt = parser.parse(ts_val)
+            ts_val = dt.replace(tzinfo=None) if dt.tzinfo else dt
+
         exists = db.query(Reading).filter(
             Reading.consumer_id == reading.consumer_id,
-            Reading.ts == reading.ts
+            Reading.ts == ts_val
         ).first()
         if exists:
             return False
             
         new_reading = Reading(
             consumer_id=reading.consumer_id,
-            ts=reading.ts,
+            ts=ts_val,
             kwh=reading.kwh,
             voltage=reading.voltage,
             current=reading.current,
@@ -459,5 +605,28 @@ def log_metric(consumer_id, ingest_to_detect_ms, detect_to_store_ms):
         )
         db.add(metric)
         db.commit()
+    finally:
+        db.close()
+
+def get_pipeline_metrics():
+    db = SessionLocal()
+    try:
+        from sqlalchemy.sql import func
+        avg_ingest = db.query(func.avg(PipelineMetric.ingest_to_detect_ms)).scalar() or 0.0
+        avg_store = db.query(func.avg(PipelineMetric.detect_to_store_ms)).scalar() or 0.0
+        count = db.query(PipelineMetric).count()
+        return {
+            "total_processed": count,
+            "avg_ingest_to_detect_ms": round(float(avg_ingest), 2),
+            "avg_detect_to_store_ms": round(float(avg_store), 2),
+            "avg_total_latency_ms": round(float(avg_ingest + avg_store), 2)
+        }
+    except Exception:
+        return {
+            "total_processed": 0,
+            "avg_ingest_to_detect_ms": 0.0,
+            "avg_detect_to_store_ms": 0.0,
+            "avg_total_latency_ms": 0.0
+        }
     finally:
         db.close()

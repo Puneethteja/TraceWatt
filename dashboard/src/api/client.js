@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
   timeout: 12000,
@@ -43,7 +43,23 @@ export async function request(path, options = {}) {
     throw new ApiError(message, status);
   }
 }
-const key = encodeURIComponent;
+export function normalizeConsumerId(id) {
+  if (!id) return id;
+  const str = String(id).trim();
+  if (/^\d+$/.test(str)) {
+    return `CUS_${str.padStart(3, "0")}`;
+  }
+  if (/^cus_?\d+$/i.test(str)) {
+    const num = str.replace(/\D/g, "");
+    return `CUS_${num.padStart(3, "0")}`;
+  }
+  return str;
+}
+
+function key(id) {
+  return encodeURIComponent(id);
+}
+
 export const api = {
   health: (signal) => request("/health", { signal }),
   consumers: async (params = {}, signal) => {
@@ -91,20 +107,27 @@ export const api = {
       if (page.length < 1000) return rows;
     }
   },
-  case: (id, signal) => request(`/cases/${key(id)}`, { signal }),
+  case: (id, signal) => request(`/cases/${key(normalizeConsumerId(id))}`, { signal }),
   updateCase: (id, data) =>
-    request(`/cases/${key(id)}/status`, { method: "PATCH", data }),
+    request(`/cases/${key(normalizeConsumerId(id))}/status`, { method: "PATCH", data }),
   consumption: (id, signal) =>
-    request(`/consumers/${key(id)}/consumption`, { signal }),
+    request(`/consumers/${key(normalizeConsumerId(id))}/consumption`, { signal }),
   baseline: (id, signal) =>
-    request(`/consumers/${key(id)}/baseline`, { signal }),
+    request(`/consumers/${key(normalizeConsumerId(id))}/baseline`, { signal }),
   feeders: (signal) => request("/feeders", { signal }),
   feederSummary: (params = {}, signal) =>
     request("/feeders/summary", { params, signal }),
   alerts: (signal) => request("/alerts", { params: { limit: 1000 }, signal }),
+  updateAlert: (id, is_read = true) =>
+    request(`/alerts/${key(id)}`, { method: "PATCH", data: { is_read } }),
+  markAllAlertsRead: () =>
+    request("/alerts/mark-all-read", { method: "POST" }),
   reading: (data) => request("/readings", { method: "POST", data }),
   pdf: (id) =>
-    request(`/export/cases/${key(id)}/pdf`, { responseType: "blob" }),
+    request(`/export/cases/${key(normalizeConsumerId(id))}/pdf`, { responseType: "blob" }),
+  evaluation: (signal) => request("/evaluation", { signal }),
+  report: (id, signal) =>
+    request(`/export/cases/${key(normalizeConsumerId(id))}/report`, { signal }).catch(() => null),
 };
 export function download(blob, name) {
   const url = URL.createObjectURL(blob),

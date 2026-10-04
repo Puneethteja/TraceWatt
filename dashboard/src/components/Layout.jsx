@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { api } from "../api/client";
 import { useResource } from "../hooks/useResource";
+import { api } from "../api/client";
 const groups = [
   [
     "WORKSPACE",
@@ -12,6 +12,7 @@ const groups = [
       ["feeders", "Feeders", "⑂"],
       ["alerts", "Alerts", "◷"],
       ["simulation", "Simulation", "⌁"],
+      ["evaluation", "Evaluation", "✓"],
     ],
   ],
   [
@@ -21,19 +22,24 @@ const groups = [
       ["baselines", "Baselines", "≋"],
     ],
   ],
-  [
-    "SYSTEM",
-    [
-      ["pipeline", "Pipeline", "⇢"],
-      ["health", "Health", "♡"],
-    ],
-  ],
 ];
 export default function Layout({ alerts = [], clearAlerts }) {
   const [open, setOpen] = useState(false),
     [dark, setDark] = useState(() => localStorage.getItem("theme") !== "light");
-  const health = useResource(api.health, 30000),
-    location = useLocation();
+  const location = useLocation();
+  const alertsResource = useResource(api.alerts, 5000);
+  const alertsList = Array.isArray(alertsResource.data) ? alertsResource.data : (Array.isArray(alerts) ? alerts : []);
+  const unreadAlertsCount = alertsList.filter((a) => !a.is_read).length;
+  const displayAlertCount = unreadAlertsCount;
+
+  useEffect(() => {
+    function handleAlertUpdate() {
+      alertsResource.refresh();
+    }
+    window.addEventListener("tracewatt-alert-updated", handleAlertUpdate);
+    return () => window.removeEventListener("tracewatt-alert-updated", handleAlertUpdate);
+  }, [alertsResource]);
+
   function theme() {
     setDark(!dark);
     localStorage.setItem("theme", dark ? "light" : "dark");
@@ -63,6 +69,20 @@ export default function Layout({ alerts = [], clearAlerts }) {
                 <i aria-hidden="true">{icon}</i>
                 {title}
                 {title === "Simulation" && <small>LIVE</small>}
+                {title === "Alerts" && displayAlertCount > 0 && (
+                  <span
+                    className="badge warning alert-sidebar-badge"
+                    style={{
+                      marginLeft: "auto",
+                      padding: "1px 6px",
+                      fontSize: "0.72rem",
+                      borderRadius: "10px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {displayAlertCount}
+                  </span>
+                )}
               </NavLink>
             ))}
           </div>
@@ -97,18 +117,29 @@ export default function Layout({ alerts = [], clearAlerts }) {
             </span>
           </div>
           <div className="actions">
-            <span
-              className={`connection ${health.data && !health.error ? "connected" : ""}`}
-            >
-              <span className="dot" />
-              {health.loading
-                ? "Connecting"
-                : health.error
-                  ? "Backend unavailable"
-                  : health.data?.status === "ok"
-                    ? "API connected"
-                    : "Check API status"}
-            </span>
+            {displayAlertCount > 0 && (
+              <NavLink
+                to="/console/alerts"
+                className="topbar-alerts-btn"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                  textDecoration: "none",
+                  marginRight: "0.5rem",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  fontSize: "0.82rem",
+                  color: "inherit",
+                  border: "1px solid var(--border)",
+                  background: "var(--card-bg, rgba(255,255,255,0.05))",
+                }}
+                title={`${displayAlertCount} Active Alerts`}
+              >
+                <span aria-hidden="true">🔔</span>
+                <span style={{ fontWeight: 600 }}>{displayAlertCount}</span>
+              </NavLink>
+            )}
             <button
               aria-label={dark ? "Use light appearance" : "Use dark appearance"}
               onClick={theme}

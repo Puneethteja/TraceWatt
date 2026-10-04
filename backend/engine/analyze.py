@@ -18,10 +18,15 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+if str(_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_DIR))
 
 import joblib
 import numpy as np
@@ -191,17 +196,27 @@ def _dominant_status(readings_df: pd.DataFrame, col: str, bad_val: str) -> bool:
 
 
 def _any_fault(readings_df: pd.DataFrame) -> bool:
-    """Return True if any meter_status == FAULT in the readings."""
+    """Return True if any meter hardware fault is present (excluding tamper)."""
     if "meter_status" not in readings_df.columns:
         return False
-    return (readings_df["meter_status"] == "FAULT").any()
+    vals = readings_df["meter_status"].dropna().astype(str).str.upper()
+    return vals.apply(lambda s: ("FAULT" in s or "INTERNAL" in s) and "TAMPER" not in s).any()
+
+
+def _any_tamper(readings_df: pd.DataFrame) -> bool:
+    """Return True if tamper flag is present."""
+    if "meter_status" not in readings_df.columns:
+        return False
+    vals = readings_df["meter_status"].dropna().astype(str).str.upper()
+    return vals.str.contains("TAMPER").any()
 
 
 def _comm_failed(readings_df: pd.DataFrame) -> bool:
-    """Return True if comm_status == FAILED is present."""
+    """Return True if comm_status failure is present."""
     if "comm_status" not in readings_df.columns:
         return False
-    return (readings_df["comm_status"] == "FAILED").any()
+    vals = readings_df["comm_status"].dropna().astype(str).str.upper()
+    return vals.str.contains("FAIL|TIMEOUT|OFFLINE").any()
 
 
 # ---------------------------------------------------------------------------
@@ -266,11 +281,16 @@ def _classify_cause(
     seasonal_res = feats["seasonal_residual"]
 
     meter_fault = _any_fault(readings_df)
+    meter_tamper = _any_tamper(readings_df)
     comm_fail = _comm_failed(readings_df)
 
     # 1. Requires Review — insufficient history or very low confidence
     if n_rows < WINDOW_ROWS:
         return "Requires Review", 0.35
+
+    # If meter tamper flag explicitly recorded, classify as Theft/Tampering
+    if meter_tamper:
+        return "Theft/Tampering", 0.94
 
     # 2. Communication Failure — dominant missing + FAILED status
     # Threshold: >8% missing in the window (10 NaN in 100 readings = 10%)
@@ -403,19 +423,19 @@ def _build_evidence(
                 # Sort features by |SHAP value| descending
                 top_idx = np.argsort(np.abs(sv_arr))[::-1][:4]
                 feat_descs = {
-                    "missing_ratio":      f"Missing data ratio {missing_ratio*100:.1f}% (SHAP-driven)",
-                    "zero_reading_ratio": f"Zero-reading fraction {zero_ratio*100:.1f}% (SHAP-driven)",
-                    "rolling_mean_30d":   f"30-day mean usage {rolling_mean:.2f} kWh (SHAP #{{}}-ranked driver)",
-                    "rolling_std_30d":    f"Usage volatility {rolling_std:.2f} kWh std (SHAP-driven)",
-                    "mom_change_pct":     f"Month-over-month change {mom_pct:+.1f}% (SHAP-driven)",
-                    "drop_length":        f"Consumption drop persisted for {drop_len} days (SHAP-driven)",
-                    "peer_deviation":     f"Peer-group deviation {peer_dev:+.2f} kWh (SHAP-driven)",
-                    "seasonal_residual":  f"Seasonal residual {seasonal_res:+.2f} kWh (SHAP-driven)",
+                    "missing_ratio":      f"Frequent gaps in smart meter transmissions ({missing_ratio*100:.1f}% missing)",
+                    "zero_reading_ratio": f"Zero electricity consumption recorded for {zero_ratio*100:.1f}% of recent readings",
+                    "rolling_mean_30d":   f"Average daily consumption dropped to {rolling_mean:.2f} kWh",
+                    "rolling_std_30d":    "Unusually erratic consumption fluctuations",
+                    "mom_change_pct":     f"Consumption dropped by {abs(mom_pct):.1f}% compared to last month",
+                    "drop_length":        f"Abnormal consumption drop has continued for {drop_len} consecutive days",
+                    "peer_deviation":     f"Usage differs significantly from neighboring consumers ({peer_dev:+.2f} kWh)",
+                    "seasonal_residual":  f"Consumption decline exceeds expected seasonal variation ({seasonal_res:+.2f} kWh)",
                 }
                 for rank, idx in enumerate(top_idx, start=1):
                     col = _FEATURE_COLS[idx]
-                    raw_desc = feat_descs.get(col, f"{col} = {feats.get(col, 0):.3f}")
-                    evidence.append(raw_desc.replace("#{}-ranked", f"#{rank}-ranked"))
+                    raw_desc = feat_descs.get(col, f"Unusual consumption indicator: {col}")
+                    evidence.append(raw_desc)
             else:
                 raise ValueError("No TreeExplainer")
         except Exception:
@@ -423,90 +443,88 @@ def _build_evidence(
             top3 = (_SHAP_EXPLAINER[:3] if isinstance(_SHAP_EXPLAINER, list)
                     else list(range(min(3, len(_FEATURE_COLS)))))
             _fb = {
-                "mom_change_pct":     f"Month-over-month usage decrease {mom_pct:+.1f}%",
-                "drop_length":        f"Persistent drop for {drop_len} days",
-                "rolling_mean_30d":   f"30-day mean usage {rolling_mean:.2f} kWh (top driver)",
-                "rolling_std_30d":    f"Usage volatility std {rolling_std:.2f} kWh",
-                "seasonal_residual":  f"Seasonal residual drop {seasonal_res:+.2f} kWh",
-                "peer_deviation":     f"Peer-group deviation {peer_dev:+.2f} kWh",
-                "missing_ratio":      f"Missing readings ratio {missing_ratio*100:.1f}%",
-                "zero_reading_ratio": f"Zero-reading ratio {zero_ratio*100:.1f}%",
+                "mom_change_pct":     f"Consumption dropped by {abs(mom_pct):.1f}% compared to last month",
+                "drop_length":        f"Abnormal consumption drop has continued for {drop_len} consecutive days",
+                "rolling_mean_30d":   f"Average daily consumption dropped to {rolling_mean:.2f} kWh",
+                "rolling_std_30d":    "Unusually erratic consumption fluctuations",
+                "seasonal_residual":  f"Consumption decline exceeds expected seasonal variation ({seasonal_res:+.2f} kWh)",
+                "peer_deviation":     f"Usage differs significantly from neighboring consumers ({peer_dev:+.2f} kWh)",
+                "missing_ratio":      f"Frequent gaps in smart meter transmissions ({missing_ratio*100:.1f}% missing)",
+                "zero_reading_ratio": f"Zero electricity consumption recorded for {zero_ratio*100:.1f}% of recent readings",
             }
             for idx in top3:
                 col = _FEATURE_COLS[idx] if idx < len(_FEATURE_COLS) else ""
-                evidence.append(_fb.get(col, f"{col} = {feats.get(col, 0):.3f}"))
+                evidence.append(_fb.get(col, f"Unusual consumption indicator: {col}"))
 
         if not evidence:
             if abs(deviation_pct) > 5:
-                evidence.append(f"Usage dropped {abs(deviation_pct):.1f}% vs baseline ({actual_kwh:.1f} vs {baseline_kwh:.1f} kWh)")
+                evidence.append(f"Electricity consumption dropped {abs(deviation_pct):.1f}% below normal baseline ({actual_kwh:.1f} vs {baseline_kwh:.1f} kWh)")
             if drop_len > 0:
-                evidence.append(f"Persistent usage drop lasting {drop_len} days")
+                evidence.append(f"Unexplained drop in consumption lasting {drop_len} consecutive days")
             if mom_pct < 0:
-                evidence.append(f"Month-over-month decrease of {abs(mom_pct):.1f}%")
+                evidence.append(f"Month-over-month decrease of {abs(mom_pct):.1f}% in billed electricity")
 
-        counter_evidence.append(f"No meter fault flags detected (meter_status=OK)")
-        counter_evidence.append(f"{recv_pct}% readings received (comm_status=OK)")
+        counter_evidence.append("Smart meter hardware is operating normally with no error codes")
+        counter_evidence.append(f"Meter communication link is active ({recv_pct}% telemetry received)")
         if abs(peer_dev) < 0.5 * max(abs(rolling_mean), 0.01):
-            counter_evidence.append("Peer consumption unchanged — not a grid event")
+            counter_evidence.append("Neighboring properties show normal consumption — issue is isolated to this property")
 
     elif cause == "Meter Malfunction":
         if meter_fault:
-            evidence.append("Meter fault flag active (meter_status=FAULT)")
+            evidence.append("Smart meter hardware diagnostics flagged an internal fault")
         if zero_ratio > 0:
-            evidence.append(f"Zero readings: {zero_ratio*100:.1f}% of window")
+            evidence.append(f"Meter reported zero consumption for {zero_ratio*100:.1f}% of recent readings")
         erratic_cv = rolling_std / max(rolling_mean, 0.01)
         if erratic_cv > 1.0:
-            evidence.append(f"Erratic readings: CV={erratic_cv:.2f} (std/mean)")
+            evidence.append("Unusually erratic and spiky consumption readings recorded")
 
-        counter_evidence.append(f"{recv_pct}% readings received (no comm outage)")
+        counter_evidence.append(f"Meter communication connection is stable ({recv_pct}% telemetry received)")
         if drop_len < 10:
-            counter_evidence.append(f"No sustained usage drop pattern (drop_length={drop_len})")
+            counter_evidence.append("No gradual seasonal decline pattern detected")
 
     elif cause == "Communication Failure":
-        evidence.append(f"Missing readings: {missing_ratio*100:.1f}% of window ({recv_pct}% received)")
+        evidence.append(f"Frequent gaps in meter data ({missing_ratio*100:.1f}% readings missing)")
         if comm_fail:
-            evidence.append("comm_status=FAILED present in readings window")
+            evidence.append("Smart meter network transmission timeout recorded")
         if missing_ratio > 0.3:
-            evidence.append("Extended outage — multiple consecutive missing periods")
+            evidence.append("Extended communication outage across multiple consecutive intervals")
 
-        counter_evidence.append("No meter fault flags during communication outage")
+        counter_evidence.append("No hardware tamper or internal meter faults recorded")
         if not meter_fault:
-            counter_evidence.append("Meter hardware likely unaffected — comm link issue only")
+            counter_evidence.append("Meter hardware is functional — issue is restricted to communication module")
 
     elif cause == "Seasonal Variation":
-        evidence.append(f"Seasonal residual {seasonal_res:+.2f} kWh (expected seasonal shift)")
-        evidence.append(f"Month-over-month change {mom_pct:+.1f}% consistent with seasonal pattern")
+        evidence.append(f"Usage shift aligns with seasonal weather changes ({seasonal_res:+.2f} kWh)")
+        evidence.append(f"Month-over-month change of {mom_pct:+.1f}% is consistent with regional seasonal patterns")
         if abs(peer_dev) < 0.3 * max(abs(rolling_mean), 0.01):
-            evidence.append("Peer group shows similar consumption shift")
+            evidence.append("Nearby consumers on the same feeder show a similar change in consumption")
 
-        counter_evidence.append("No meter fault or comm failure")
-        counter_evidence.append("Shift is proportional and gradual — not consistent with theft")
+        counter_evidence.append("No meter hardware errors or communication network drops")
+        counter_evidence.append("Gradual usage trend is consistent with weather changes rather than sudden bypass")
 
     elif cause == "Legitimate Abnormal":
-        evidence.append(f"Usage shift {mom_pct:+.1f}% month-over-month")
+        evidence.append(f"Consumer electricity usage shifted {mom_pct:+.1f}% month-over-month")
         if abs(deviation_pct) > 10:
-            evidence.append(f"Actual {actual_kwh:.1f} kWh vs baseline {baseline_kwh:.1f} kWh ({deviation_pct:+.1f}%)")
+            evidence.append(f"Recorded usage ({actual_kwh:.1f} kWh) deviated from baseline ({baseline_kwh:.1f} kWh)")
 
-        counter_evidence.append("No meter fault or comm issue")
-        counter_evidence.append("Shift within sanctioned load limits — likely legitimate event")
-        if drop_len < 10:
-            counter_evidence.append(f"No persistent drop pattern (drop_length={drop_len})")
+        counter_evidence.append("No meter hardware faults or communication issues detected")
+        counter_evidence.append("Load remains within sanctioned capacity limits")
 
     elif cause == "Normal":
-        evidence.append(f"Usage consistent with baseline ({actual_kwh:.1f} vs {baseline_kwh:.1f} kWh)")
-        evidence.append(f"30-day mean {rolling_mean:.2f} kWh, volatility {rolling_std:.2f} kWh")
-        evidence.append(f"{recv_pct}% readings received, no status flags")
+        evidence.append(f"Electricity consumption matches expected baseline ({actual_kwh:.1f} kWh vs {baseline_kwh:.1f} kWh)")
+        evidence.append(f"Daily usage pattern is stable (average {rolling_mean:.2f} kWh)")
+        evidence.append("All smart meter telemetry received on schedule")
 
-        counter_evidence.append("No anomalous score patterns detected")
-        counter_evidence.append("Peer deviation within normal range")
+        counter_evidence.append("No anomalous consumption or tamper signals detected")
+        counter_evidence.append("Consumption is consistent with neighboring properties")
 
     else:  # Requires Review
-        evidence.append("Anomaly signals present but insufficient evidence to classify")
+        evidence.append("Anomaly signals present but insufficient history to classify with high confidence")
         if missing_ratio > 0.05:
-            evidence.append(f"Partial data: {missing_ratio*100:.1f}% missing readings")
+            evidence.append(f"Partial telemetry gaps ({missing_ratio*100:.1f}% missing readings)")
 
-        counter_evidence.append("History may be too short or data quality insufficient")
-        counter_evidence.append("Manual inspection recommended before action")
+        counter_evidence.append("Telemetry history is currently limited; additional readings needed for high confidence")
+        counter_evidence.append("Recommend manual verification of site before dispatching crew")
 
     return evidence, counter_evidence
 

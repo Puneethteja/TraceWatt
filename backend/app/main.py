@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 from .config import ALLOWED_ORIGINS
-from .db import init_db
+from .db import init_db, get_pipeline_metrics
 from .seed import seed_database
 from .services.mqtt_service import mqtt_service
 from .routers import readings, consumers, cases, feeders, export, alerts, dashboard, ws
@@ -33,13 +33,19 @@ async def shutdown_event():
 
 @app.get("/health")
 async def health_check():
+    metrics = get_pipeline_metrics()
     return {
         "status": "ok",
         "app": "TraceWatt API",
         "database": "synced",
         "fuzzy_engine": "active",
-        "mqtt_connected": mqtt_service.is_connected
+        "mqtt_connected": mqtt_service.is_connected,
+        "pipeline_metrics": metrics
     }
+
+@app.get("/evaluation")
+def root_evaluation():
+    return dashboard.dashboard_evaluation()
 
 app.include_router(dashboard.router)
 app.include_router(readings.router)

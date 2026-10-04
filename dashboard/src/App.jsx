@@ -1,4 +1,4 @@
-﻿import { lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import Landing from "./pages/Landing";
@@ -46,8 +46,9 @@ export default function App() {
             />
             <Route path="health" element={<ConsoleRoute name="System" />} />
             <Route path="simulation" element={<Simulation />} />
+            <Route path="evaluation" element={<ConsoleRoute name="Evaluation" />} />
           </Route>
-          {["consumers", "cases", "feeders", "alerts", "consumption"].map(
+          {["consumers", "cases", "feeders", "alerts", "consumption", "evaluation"].map(
             (path) => (
               <Route
                 key={path}

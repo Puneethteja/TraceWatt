@@ -39,7 +39,7 @@ class FuzzyAnomalyEngine:
                 "score_center": 0.94,
                 "confidence_base": 0.94,
                 "action": "Dispatch field inspection unit to verify terminal junction seals.",
-                "evidence": "Fuzzy Rule R1 Fired: Severe consumption drop isolated from peer group without telemetry or hardware faults."
+                "evidence": "Severe consumption drop isolated to this property without hardware or communication faults."
             },
             {
                 "id": "R2_THEFT_HIGH",
@@ -49,7 +49,7 @@ class FuzzyAnomalyEngine:
                 "score_center": 0.84,
                 "confidence_base": 0.88,
                 "action": "Dispatch field inspection unit to verify meter seals.",
-                "evidence": "Fuzzy Rule R2 Fired: High consumption drop with clean communication and hardware status."
+                "evidence": "Substantial consumption drop while meter hardware and communication remain normal."
             },
             {
                 "id": "R3_METER_FAULT",
@@ -59,7 +59,7 @@ class FuzzyAnomalyEngine:
                 "score_center": 0.72,
                 "confidence_base": 0.85,
                 "action": "Schedule meter diagnostic team for recalibration or replacement.",
-                "evidence": "Fuzzy Rule R3 Fired: Hardware fault status registered on CT/PT register."
+                "evidence": "Smart meter diagnostic check registered an internal hardware fault."
             },
             {
                 "id": "R4_COMM_FAILURE",
@@ -69,7 +69,7 @@ class FuzzyAnomalyEngine:
                 "score_center": 0.58,
                 "confidence_base": 0.82,
                 "action": "Reset cellular modem interface and test signal strength.",
-                "evidence": "Fuzzy Rule R4 Fired: Communication packet loss and telemetry gateway ping timeouts."
+                "evidence": "Communication packet timeouts and missing smart meter telemetry."
             },
             {
                 "id": "R5_LEGITIMATE_SEASONAL",
@@ -79,7 +79,7 @@ class FuzzyAnomalyEngine:
                 "score_center": 0.32,
                 "confidence_base": 0.86,
                 "action": "Update consumer baseline to accommodate peer seasonal shift.",
-                "evidence": "Fuzzy Rule R5 Fired: Consumption drop correlated across peer group, indicating seasonal/HVAC shift."
+                "evidence": "Consumption change matches neighboring properties, indicating seasonal or weather shift."
             },
             {
                 "id": "R6_NORMAL",
@@ -89,7 +89,7 @@ class FuzzyAnomalyEngine:
                 "score_center": 0.10,
                 "confidence_base": 0.95,
                 "action": "No action required.",
-                "evidence": "Fuzzy Rule R6 Fired: Consumption within normal 30-day baseline limits."
+                "evidence": "Consumption is consistent with historical baseline patterns."
             }
         ]
 
@@ -172,13 +172,13 @@ class FuzzyAnomalyEngine:
         counter_evidence_list = []
 
         if comm["High"] > 0.2:
-            counter_evidence_list.append("Cellular gateway report indicates network packet dropout.")
+            counter_evidence_list.append("Cellular gateway reports network transmission timeouts.")
         if meter["Faulty"] > 0.2:
-            counter_evidence_list.append("Meter diagnostic flag indicates internal hardware register fault.")
+            counter_evidence_list.append("Meter diagnostics show internal hardware fault codes.")
         if peer["Normal"] > 0.2:
-            counter_evidence_list.append("Peer group displays similar consumption trend.")
+            counter_evidence_list.append("Neighboring consumers on the feeder show a similar consumption trend.")
         if not counter_evidence_list:
-            counter_evidence_list.append("No hardware or communication interference detected.")
+            counter_evidence_list.append("No hardware or network communication issues detected.")
 
         return {
             "anomaly_score": anomaly_score,

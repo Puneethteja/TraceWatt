@@ -1,4 +1,4 @@
-﻿export const statuses = [
+export const statuses = [
   "New",
   "Under Review",
   "Inspection Scheduled",
@@ -11,7 +11,11 @@ export function readingPayload(form, now = false) {
   const date = now ? new Date() : new Date(form.ts);
   if (!Number.isFinite(date.getTime()))
     throw new Error("Enter a valid timestamp.");
-  const result = { consumer_id: form.consumer_id, ts: date.toISOString() };
+  const result = {
+    consumer_id: form.consumer_id,
+    ts: date.toISOString(),
+    is_simulation: true,
+  };
   for (const field of ["kwh", "voltage", "current", "power_kw"]) {
     const value = form[field];
     result[field] = value === "" || value == null ? null : Number(value);

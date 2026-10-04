@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, Response
 from typing import List, Optional
 
-from ..db import export_cases, get_case, list_consumers, get_baseline, SessionLocal
+from ..db import export_cases, get_case, list_consumers, get_baseline, get_consumption, SessionLocal
 from ..models import Consumer
 from ..schemas import CaseOut
 from ..services.report_pdf import render_report
@@ -28,7 +28,12 @@ def export_case_pdf(consumer_id: str):
         db.close()
         
     baseline = get_baseline(consumer_id)
+    readings = get_consumption(consumer_id)
     
-    pdf_bytes = render_report(case=case, consumer=consumer, baseline=baseline)
+    pdf_bytes = render_report(case=case, consumer=consumer, baseline=baseline, readings=readings)
     
-    return Response(content=pdf_bytes, media_type="application/pdf")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="TraceWatt-{consumer_id}.pdf"'},
+    )

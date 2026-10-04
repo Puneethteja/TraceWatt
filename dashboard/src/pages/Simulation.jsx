@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { readingPayload } from "../api/contracts";
 import { useResource } from "../hooks/useResource";
@@ -23,6 +24,75 @@ const localTime = () => {
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0, 19);
 };
+
+export const SCENARIOS = [
+  {
+    id: "theft",
+    name: "Theft / Meter Tampering",
+    description: "Sharp consumption drop (-75%) with active line voltage and tamper flag set.",
+    values: {
+      kwh: "0.18",
+      voltage: "230.5",
+      current: "7.6",
+      power_kw: "0.18",
+      meter_status: "Tamper Detected",
+      comm_status: "OK",
+    },
+  },
+  {
+    id: "malfunction",
+    name: "Meter Malfunction",
+    description: "Zero consumption registered despite network load; internal hardware fault signal.",
+    values: {
+      kwh: "0.00",
+      voltage: "228.0",
+      current: "0.0",
+      power_kw: "0.00",
+      meter_status: "Internal Fault",
+      comm_status: "OK",
+    },
+  },
+  {
+    id: "comm_failure",
+    name: "Communication Failure",
+    description: "Telemetry transmission timeout; null payload values simulating lost telemetry.",
+    values: {
+      kwh: "",
+      voltage: "",
+      current: "",
+      power_kw: "",
+      meter_status: "Offline",
+      comm_status: "Timeout",
+    },
+  },
+  {
+    id: "surge",
+    name: "Legitimate Abnormal Surge",
+    description: "High consumption spike (+250%) within expected operational parameters; no tamper flag.",
+    values: {
+      kwh: "8.90",
+      voltage: "226.5",
+      current: "39.2",
+      power_kw: "8.85",
+      meter_status: "Normal",
+      comm_status: "OK",
+    },
+  },
+  {
+    id: "normal",
+    name: "Normal Baseline Profile",
+    description: "Nominal residential consumption profile consistent with historical baseline.",
+    values: {
+      kwh: "1.85",
+      voltage: "230.0",
+      current: "8.1",
+      power_kw: "1.86",
+      meter_status: "Normal",
+      comm_status: "OK",
+    },
+  },
+];
+
 export default function Simulation() {
   const [offset, setOffset] = useState(0);
   const consumers = useResource(
@@ -44,7 +114,19 @@ export default function Simulation() {
     [busy, setBusy] = useState(false),
     [result, setResult] = useState(null),
     [error, setError] = useState(""),
-    [pulse, setPulse] = useState(0);
+    [pulse, setPulse] = useState(0),
+    [selectedScenario, setSelectedScenario] = useState("");
+  function selectScenario(scenarioId) {
+    setSelectedScenario(scenarioId);
+    const scenario = SCENARIOS.find((s) => s.id === scenarioId);
+    if (scenario) {
+      setForm((prev) => ({
+        ...prev,
+        ts: localTime(),
+        ...scenario.values,
+      }));
+    }
+  }
   const latest = useRef({ form, interval }),
     inflight = useRef(false),
     mounted = useRef(true),
@@ -73,6 +155,8 @@ export default function Simulation() {
         setResult({ ack, payload, at: new Date().toLocaleTimeString() });
         setPulse((v) => v + 1);
       }
+      window.dispatchEvent(new Event("tracewatt-case-updated"));
+      window.dispatchEvent(new Event("tracewatt-alert-updated"));
       return true;
     } catch (e) {
       if (mounted.current) {
@@ -138,9 +222,9 @@ export default function Simulation() {
   return (
     <>
       <PageHead
-        eyebrow="LIVE INGESTION / INPUT SIMULATION"
-        title="A signal becomes a record."
-        description="This simulates the same ingestion path that a future real smart meter / IoT device would use."
+        eyebrow="VIRTUAL SMART-METER MONITORING"
+        title="Smart Meter Ingestion Simulation"
+        description="Generate live smart-meter telemetry to test automated anomaly detection and investigation workflows."
       >
         <Badge>{mode}</Badge>
       </PageHead>
@@ -148,20 +232,19 @@ export default function Simulation() {
         <Panel
           title="Connected grid"
           className="simulation-scene"
-          aside={<span>CONCEPTUAL TOPOLOGY</span>}
+          aside={<span>GRID TOPOLOGY</span>}
         >
           <Suspense fallback={<div className="scene" />}>
             <GridScene pulse={pulse} consumer={id} />
           </Suspense>
           <div className="route-legend">
-            Consumer → Meter → Feeder → TraceWatt
+            Consumer → Smart Meter → Feeder Substation → TraceWatt Engine
           </div>
           <p className="muted">
-            Nodes illustrate the ingestion path, not actual network topology. A
-            moving signal means a request was sent, not that analysis completed.
+            Telemetry path: Smart meter sends interval telemetry to feeder monitoring unit for real-time loss detection.
           </p>
         </Panel>
-        <Panel title="Reading controls">
+        <Panel title="Ingestion controls">
           <Resource
             resource={consumers}
             empty="No consumers available for simulation"
@@ -182,6 +265,34 @@ export default function Simulation() {
             <fieldset
               disabled={busy || mode === "Running" || !!consumers.error}
             >
+              <label>
+                Scenario Playground Preset
+                <select
+                  value={selectedScenario}
+                  onChange={(e) => selectScenario(e.target.value)}
+                >
+                  <option value="">Custom telemetry (Manual inputs)</option>
+                  {SCENARIOS.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {selectedScenario && (
+                <div
+                  className="notice"
+                  style={{
+                    marginTop: "0.25rem",
+                    marginBottom: "0.75rem",
+                    fontSize: "0.85rem",
+                    padding: "0.5rem 0.75rem",
+                  }}
+                >
+                  <strong>Scenario Target:</strong>{" "}
+                  {SCENARIOS.find((s) => s.id === selectedScenario)?.description}
+                </div>
+              )}
               <label>
                 Real consumer
                 <select
@@ -311,17 +422,16 @@ export default function Simulation() {
             </button>
           </div>
           <p className="muted">
-            Explicit input simulation. Blank optional fields are sent as null.
-            Running repeats these inputs with a fresh timestamp each interval
-            and pauses when hidden. It writes real backend records.
+            Continuous simulation streams meter telemetry at the specified interval.
+            Telemetry is processed in real time by the anomaly detection engine.
           </p>
         </Panel>
       </div>
       <Panel
-        title="Latest request acknowledgement"
+        title="Ingestion status"
         aside={
           busy ? (
-            <Badge>Sending</Badge>
+            <Badge>Transmitting</Badge>
           ) : result ? (
             <span>{result.at}</span>
           ) : null
@@ -334,31 +444,34 @@ export default function Simulation() {
         )}
         {result ? (
           <div className="notice" role="status">
-            <strong>
-              {result.ack.stored
-                ? "Reading stored successfully."
-                : "Reading not stored. A reading with this consumer and timestamp may already exist."}
-            </strong>
-            <p>
-              Consumer: {result.payload.consumer_id} · {result.payload.ts}
-            </p>
-            <p>
-              Stored: {String(result.ack.stored)} · Queued:{" "}
-              {String(result.ack.queued)}
-            </p>
-            <p>
-              ML analysis is active. Queue acknowledgement confirms initial
-              ingestion before analysis pipeline.
-            </p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+              <div>
+                <strong>
+                  {result.ack.stored
+                    ? "Reading received and evaluated by ML anomaly detection engine."
+                    : "Reading not recorded. A reading with this consumer and timestamp may already exist."}
+                </strong>
+                <p>
+                  Consumer: {result.payload.consumer_id} · {result.payload.ts}
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <Link className="button secondary" to="/console/cases" style={{ padding: "0.25rem 0.6rem", fontSize: "0.85rem" }}>
+                  View in Cases ↗
+                </Link>
+                <Link className="button secondary" to="/console/alerts" style={{ padding: "0.25rem 0.6rem", fontSize: "0.85rem" }}>
+                  View in Alerts ↗
+                </Link>
+              </div>
+            </div>
           </div>
         ) : !busy && !error ? (
-          <p className="muted">No reading has been sent in this session.</p>
+          <p className="muted">No simulation telemetry active in this session.</p>
         ) : null}
-        <Pipeline ack={result?.ack} health={!!result} />
       </Panel>
       <Panel
-        title="Live consumption from backend"
-        aside={<Badge>15s polling</Badge>}
+        title="Live meter telemetry & baseline"
+        aside={<Badge>Live</Badge>}
       >
         <Telemetry id={id} revision={result?.at || 0} />
       </Panel>

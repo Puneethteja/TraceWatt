@@ -186,7 +186,10 @@ export function Telemetry({ id, revision = 0, baselineOnly = false }) {
                     minTickGap={50}
                     tick={{ fontSize: 11 }}
                   />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <YAxis
+                    tick={{ fontSize: 11 }}
+                    domain={[0, (dataMax) => Math.max(10, Math.ceil((dataMax || 0) * 1.15))]}
+                  />
                   <Tooltip
                     labelFormatter={date}
                     contentStyle={{
@@ -202,8 +205,8 @@ export function Telemetry({ id, revision = 0, baselineOnly = false }) {
                       name="Actual kWh"
                       stroke="#36966e"
                       fill="#36966e"
-                      fillOpacity={0.1}
-                      connectNulls={false}
+                      fillOpacity={0.15}
+                      connectNulls={true}
                       isAnimationActive={false}
                     />
                   )}
@@ -214,7 +217,7 @@ export function Telemetry({ id, revision = 0, baselineOnly = false }) {
                     stroke="#a8a664"
                     strokeDasharray="5 5"
                     dot={false}
-                    connectNulls={false}
+                    connectNulls={true}
                     isAnimationActive={false}
                   />
                   <Brush
