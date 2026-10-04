@@ -137,3 +137,14 @@ export function download(blob, name) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+export const getDashboardSummary = () => request("/dashboard/summary");
+export const getConsumptionTrend = () => request("/dashboard/consumption-trend");
+export const getRiskDistribution = () => request("/dashboard/risk-distribution");
+export const getRecentAlerts = (limit = 10) => request("/alerts", { params: { limit } });
+export const getConsumerDetail = (id) => request(`/consumers/${key(normalizeConsumerId(id))}`);
+export const getCaseDetail = (id) => request(`/cases/${key(normalizeConsumerId(id))}`);
+export const updateCaseStatus = (id, data) => request(`/cases/${key(normalizeConsumerId(id))}/status`, { method: "PATCH", data });
+export const getConsumerReport = (id) => request(`/export/cases/${key(normalizeConsumerId(id))}/report`);
+export const getEvaluationMetrics = () => request("/dashboard/evaluation");
+

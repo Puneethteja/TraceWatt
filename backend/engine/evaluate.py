@@ -122,6 +122,14 @@ def run_evaluation(data_dir: str) -> dict:
             c_df = c_df.copy()
             c_df["kwh"] = c_df["generated_kwh"]
 
+        # If in_event_window is present and contains True, evaluate at the event occurrence
+        if "in_event_window" in c_df.columns and c_df["in_event_window"].any():
+            event_indices = c_df.index[c_df["in_event_window"]]
+            event_end_pos = c_df.index.get_loc(event_indices[-1])
+            eval_df = c_df.iloc[max(0, event_end_pos - 99) : event_end_pos + 1].copy()
+        else:
+            eval_df = c_df.tail(100).copy()
+
         # Consumer row
         if cid in cons_meta.index:
             consumer_row = cons_meta.loc[cid]
@@ -131,7 +139,7 @@ def run_evaluation(data_dir: str) -> dict:
         # Timed inference
         t0 = time.perf_counter()
         try:
-            det = analyze(cid, c_df, consumer_row)
+            det = analyze(cid, eval_df, consumer_row)
         except Exception as e:
             print(f"  [WARN] analyze() failed for {cid}: {e}")
             continue

@@ -250,14 +250,15 @@ export function Telemetry({ id, revision = 0, baselineOnly = false }) {
   );
 }
 export function Pipeline({ ack, health }) {
+  const isHealthy = health && health.status === "ok";
   const nodes = [
     ["INGEST", health ? "API reachable" : "Not verified"],
     ["VALIDATE", ack ? "Accepted" : "Not observed"],
     ["STORE", ack?.stored ? "Confirmed" : ack ? "Not stored" : "Not observed"],
     ["QUEUE", ack?.queued ? "Acknowledged" : "Not observed"],
-    ["ANALYZE", "Connected"],
-    ["CASE", "Active"],
-    ["ALERT", "Active"],
+    ["ANALYZE", health?.fuzzy_engine === "active" ? "Connected" : isHealthy ? "ML active" : "ML unavailable"],
+    ["CASE", isHealthy ? "Active" : "Not observed"],
+    ["ALERT", isHealthy ? "Active" : "Not observed"],
   ];
   return (
     <div className="pipeline">

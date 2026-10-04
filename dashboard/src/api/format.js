@@ -13,6 +13,9 @@ export const date = (value) =>
 export function parseEvidence(value) {
   if (value == null || value === "") return [];
   if (Array.isArray(value)) return value.map(v => typeof v === "object" ? JSON.stringify(v) : String(v));
+  if (typeof value === "object" && value !== null) {
+    return Object.entries(value).map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`);
+  }
   if (typeof value === "string") {
     const trimmed = value.trim();
     if ((trimmed.startsWith("[") && trimmed.endsWith("]")) || (trimmed.startsWith("{") && trimmed.endsWith("}"))) {

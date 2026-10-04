@@ -107,3 +107,27 @@ def test_export_case_pdf(setup_db):
 def test_export_case_pdf_not_found(setup_db):
     response = client.get("/export/cases/INVALID/pdf")
     assert response.status_code == 404
+
+def test_export_case_report(setup_db):
+    response = client.get("/export/cases/C1/report")
+    assert response.status_code == 200
+    data = response.json()
+    assert "consumer_details" in data
+    assert "consumption_comparison" in data
+    assert "anomaly_assessment" in data
+    assert "behavioural_pattern" in data
+    assert "supporting_features" in data
+    assert "explainability" in data
+    assert "recommended_inspection" in data
+    assert data["consumer_details"]["consumer_id"] == "C1"
+
+def test_dashboard_evaluation():
+    response = client.get("/dashboard/evaluation")
+    assert response.status_code == 200
+    data = response.json()
+    assert "model_performance" in data
+    assert "latency_and_throughput" in data
+    assert "robustness_and_resilience" in data
+    assert data["model_performance"]["precision"] > 0.70
+    assert data["model_performance"]["recall"] > 0.80
+

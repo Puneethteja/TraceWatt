@@ -14,8 +14,10 @@ export function readingPayload(form, now = false) {
   const result = {
     consumer_id: form.consumer_id,
     ts: date.toISOString(),
-    is_simulation: true,
   };
+  if (form.is_simulation !== undefined) {
+    result.is_simulation = Boolean(form.is_simulation);
+  }
   for (const field of ["kwh", "voltage", "current", "power_kw"]) {
     const value = form[field];
     result[field] = value === "" || value == null ? null : Number(value);
