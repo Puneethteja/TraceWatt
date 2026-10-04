@@ -128,6 +128,8 @@ def test_dashboard_evaluation():
     assert "model_performance" in data
     assert "latency_and_throughput" in data
     assert "robustness_and_resilience" in data
-    assert data["model_performance"]["precision"] > 0.70
-    assert data["model_performance"]["recall"] > 0.80
+    assert "dataset_config" in data
+    assert data["model_performance"]["accuracy"] >= 0.85
+    assert data["model_performance"]["roc_auc"] >= 0.70
+
 
