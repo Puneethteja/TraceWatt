@@ -309,37 +309,172 @@ export function Overview() {
             )}
           </Resource>
         </Panel>
-        <Panel title="Consumer composition">
+        <div className="analytics-panel">
+          <div className="analytics-header">
+            <h2>Consumer Composition</h2>
+            <p>Where consumers sit across risk, category and feeder.</p>
+          </div>
           <Resource resource={consumers} empty="No consumers found">
-            {(rows) => (
-              <div className="distribution">
-                {["risk_level", "category", "feeder_id"].map((field) => (
-                  <div key={field}>
-                    <h3>{field.replaceAll("_", " ")}</h3>
-                    {Object.entries(
-                      rows.reduce((a, c) => {
-                        const k = c[field] || "Not available";
-                        a[k] = (a[k] || 0) + 1;
-                        return a;
-                      }, {}),
-                    ).map(([name, count]) => (
-                      <div className="distribution-row" key={name}>
-                        <span>{name}</span>
-                        <meter
-                          min="0"
-                          max={rows.length}
-                          value={count}
-                          aria-label={name}
-                        />
-                        <strong>{count}</strong>
+            {(rows) => {
+              const total = rows.length;
+              if (total === 0) return <div className="empty">No consumers found</div>;
+              
+              const riskCounts = {};
+              const categoryCounts = {};
+              const feederCounts = {};
+              
+              rows.forEach((r) => {
+                const risk = r.risk_level || "Unknown";
+                riskCounts[risk] = (riskCounts[risk] || 0) + 1;
+                
+                const cat = r.category || "Unknown";
+                categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+                
+                const fdr = r.feeder_id || "Unknown";
+                feederCounts[fdr] = (feederCounts[fdr] || 0) + 1;
+              });
+
+              const sortedCats = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+              const sortedFeeders = Object.entries(feederCounts).sort((a, b) => b[1] - a[1]);
+              const sortedRisks = Object.entries(riskCounts).sort((a, b) => b[1] - a[1]);
+
+              const r = 40;
+              const circ = 2 * Math.PI * r;
+              let currentOffset = 0;
+              
+              const RISK_COLORS = {
+                Low: "var(--success)",
+                Medium: "var(--warning)",
+                High: "var(--danger)",
+              };
+              const fallbackColors = ["#863bff", "#47bfff", "#ff8a00", "#e02424", "#9db293"];
+
+              const segments = sortedRisks.map(([name, count], i) => ({
+                name,
+                count,
+                color: RISK_COLORS[name] || fallbackColors[i % fallbackColors.length]
+              }));
+
+              return (
+                <div>
+                  <div className="analytics-body">
+                    {/* RISK DONUT */}
+                    <div className="analytics-section">
+                      <div className="analytics-title">Risk Level</div>
+                      <div className="donut-container">
+                        <div className="donut-svg-wrapper">
+                          <svg className="donut-svg" viewBox="0 0 100 100">
+                            {segments.map((seg) => {
+                              if (seg.count === 0) return null;
+                              const pct = seg.count / total;
+                              const dash = pct * circ;
+                              const offset = currentOffset;
+                              currentOffset -= dash;
+                              return (
+                                <circle
+                                  key={seg.name}
+                                  className="donut-segment"
+                                  cx="50"
+                                  cy="50"
+                                  r={r}
+                                  stroke={seg.color}
+                                  strokeDasharray={`${dash} ${circ}`}
+                                  strokeDashoffset={offset}
+                                  title={`${seg.name}: ${seg.count} (${(pct * 100).toFixed(1)}%)`}
+                                />
+                              );
+                            })}
+                          </svg>
+                          <div className="donut-center">
+                            <strong>{total}</strong>
+                            <span>Consumers</span>
+                          </div>
+                        </div>
+                        <div className="donut-legend">
+                          {segments.map((seg) => (
+                            <div
+                              className="legend-item"
+                              key={seg.name}
+                              title={`${((seg.count / total) * 100).toFixed(1)}%`}
+                            >
+                              <div className="legend-dot" style={{ background: seg.color }}></div>
+                              <span className="legend-name">{seg.name}</span>
+                              <span className="legend-count">{seg.count}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+                      <div className="analytics-insight">
+                        {segments.length > 0 && segments[0].count > 0
+                          ? `${((segments[0].count / total) * 100).toFixed(1)}% of consumers are currently ${segments[0].name.toLowerCase()} risk.`
+                          : "No risk data available."}
+                      </div>
+                    </div>
+
+                    {/* CATEGORY BAR */}
+                    <div className="analytics-section">
+                      <div className="analytics-title">Category</div>
+                      <div className="bar-chart">
+                        {sortedCats.map(([name, count]) => (
+                          <div
+                            className="bar-row"
+                            key={name}
+                            title={`${name}: ${count} (${((count / total) * 100).toFixed(1)}%)`}
+                          >
+                            <span className="bar-name">{name}</span>
+                            <div className="bar-track">
+                              <div
+                                className="bar-fill"
+                                style={{ width: `${(count / sortedCats[0][1]) * 100}%` }}
+                              ></div>
+                            </div>
+                            <span className="bar-count">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="analytics-insight">
+                        Highest represented category: {sortedCats[0]?.[0]}.
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
+
+                  {/* FEEDER BAR */}
+                  <div className="analytics-full">
+                    <div className="analytics-title">Feeder Distribution</div>
+                    <div
+                      className="bar-chart"
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                        gap: "20px 40px",
+                      }}
+                    >
+                      {sortedFeeders.map(([name, count]) => (
+                        <div
+                          className="bar-row"
+                          key={name}
+                          title={`${name}: ${count} (${((count / total) * 100).toFixed(1)}%)`}
+                        >
+                          <span className="bar-name">{name}</span>
+                          <div className="bar-track">
+                            <div
+                              className="bar-fill"
+                              style={{ width: `${(count / sortedFeeders[0][1]) * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="bar-count">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="analytics-insight">
+                      {sortedFeeders.slice(0, 2).map((f) => f[0]).join(" and ")} currently have the highest consumer count.
+                    </div>
+                  </div>
+                </div>
+              );
+            }}
           </Resource>
-        </Panel>
+        </div>
       </div>
     </>
   );
@@ -1764,6 +1899,7 @@ const pages = {
   Alerts,
   DataView,
   System,
+  Evaluation,
 };
 export default function ConsolePage({ name, ...props }) {
   const Page = pages[name];
