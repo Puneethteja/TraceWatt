@@ -319,12 +319,12 @@ export function Overview() {
               const total = rows.length;
               if (total === 0) return <div className="empty">No consumers found</div>;
               
-              const riskCounts = { Low: 0, Medium: 0, High: 0 };
+              const riskCounts = {};
               const categoryCounts = {};
               const feederCounts = {};
               
               rows.forEach((r) => {
-                const risk = r.risk_level || "Low";
+                const risk = r.risk_level || "Unknown";
                 riskCounts[risk] = (riskCounts[risk] || 0) + 1;
                 
                 const cat = r.category || "Unknown";
@@ -336,15 +336,24 @@ export function Overview() {
 
               const sortedCats = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
               const sortedFeeders = Object.entries(feederCounts).sort((a, b) => b[1] - a[1]);
+              const sortedRisks = Object.entries(riskCounts).sort((a, b) => b[1] - a[1]);
 
               const r = 40;
               const circ = 2 * Math.PI * r;
               let currentOffset = 0;
-              const segments = [
-                { name: "Low", count: riskCounts.Low || 0, color: "var(--success)" },
-                { name: "Medium", count: riskCounts.Medium || 0, color: "var(--warning)" },
-                { name: "High", count: riskCounts.High || 0, color: "var(--danger)" },
-              ];
+              
+              const RISK_COLORS = {
+                Low: "var(--success)",
+                Medium: "var(--warning)",
+                High: "var(--danger)",
+              };
+              const fallbackColors = ["#863bff", "#47bfff", "#ff8a00", "#e02424", "#9db293"];
+
+              const segments = sortedRisks.map(([name, count], i) => ({
+                name,
+                count,
+                color: RISK_COLORS[name] || fallbackColors[i % fallbackColors.length]
+              }));
 
               return (
                 <div>
@@ -396,9 +405,9 @@ export function Overview() {
                         </div>
                       </div>
                       <div className="analytics-insight">
-                        {segments[0].count > 0
-                          ? `${((segments[0].count / total) * 100).toFixed(1)}% of consumers are currently low risk.`
-                          : "No low risk consumers found."}
+                        {segments.length > 0 && segments[0].count > 0
+                          ? `${((segments[0].count / total) * 100).toFixed(1)}% of consumers are currently ${segments[0].name.toLowerCase()} risk.`
+                          : "No risk data available."}
                       </div>
                     </div>
 
