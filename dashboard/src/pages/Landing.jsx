@@ -62,7 +62,7 @@ export default function Landing() {
         {/* 01 THE PROBLEM */}
         <section className="landing-section">
           <div className="section-intro">
-            <div className="eyebrow">01 — THE PROBLEM</div>
+            <div className="eyebrow">THE PROBLEM</div>
             <h2>Not every unusual reading means theft.</h2>
             <p>
               The challenge is not simply finding what looks unusual. The challenge is understanding why.
@@ -88,7 +88,7 @@ export default function Landing() {
         {/* 02 THE IDEA */}
         <section className="landing-section gray-bg">
           <div className="section-intro">
-            <div className="eyebrow">02 — THE IDEA</div>
+            <div className="eyebrow">THE IDEA</div>
             <h2>From a suspicious signal to a clear investigation.</h2>
             <p>
               TraceWatt brings consumption history, consumer behavior and network information together to help investigators understand unusual electricity patterns.
@@ -116,7 +116,7 @@ export default function Landing() {
         {/* 03 HOW IT WORKS */}
         <section id="how-it-works" className="landing-section workflow-section">
           <div className="section-intro">
-            <div className="eyebrow">03 — HOW IT WORKS</div>
+            <div className="eyebrow">HOW IT WORKS</div>
             <h2>A simple, clear path to truth.</h2>
           </div>
           <div className="workflow workflow-new">
@@ -131,7 +131,7 @@ export default function Landing() {
         {/* 04 WHAT YOU SEE */}
         <section className="landing-section">
           <div className="section-intro">
-            <div className="eyebrow">04 — WHAT YOU SEE</div>
+            <div className="eyebrow">WHAT YOU SEE</div>
             <h2>Everything you need for an investigation.</h2>
           </div>
           <div className="explain-grid">
@@ -161,7 +161,7 @@ export default function Landing() {
         {/* 05 WHY IT MATTERS */}
         <section id="why-it-matters" className="landing-section gray-bg">
           <div className="section-intro">
-            <div className="eyebrow">05 — WHY IT MATTERS</div>
+            <div className="eyebrow">WHY IT MATTERS</div>
             <h2>Less guessing.<br/>Better investigation.<br/>Clearer decisions.</h2>
           </div>
           <div className="before-after">
@@ -223,7 +223,7 @@ export default function Landing() {
 
         {/* 06 READY TO INVESTIGATE */}
         <section className="landing-cta">
-          <div className="eyebrow">06 — READY TO INVESTIGATE</div>
+          <div className="eyebrow">READY TO INVESTIGATE</div>
           <h2>
             Don't just find what looks wrong.<br/>
             Understand what happened.
