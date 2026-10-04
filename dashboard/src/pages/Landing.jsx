@@ -1,14 +1,14 @@
 import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
+import TraceWattLogo from "../components/TraceWattLogo";
 const GridScene = lazy(() => import("../components/GridScene"));
 
 export default function Landing() {
   return (
     <div className="landing">
       <nav className="landing-nav">
-        <Link className="brand" to="/">
-          <span className="brand-mark">ϟ</span>TraceWatt
-          <span className="brand-tag">ENERGY INTELLIGENCE</span>
+        <Link className="brand" to="/" aria-label="TraceWatt Home">
+          <TraceWattLogo variant="full" size="lg" theme="auto" showTagline />
         </Link>
         <div>
           <a href="#how-it-works">How it works</a>
@@ -245,8 +245,8 @@ export default function Landing() {
         </section>
       </main>
       <footer>
-        <Link className="brand" to="/">
-          <span className="brand-mark">ϟ</span>TraceWatt
+        <Link className="brand" to="/" aria-label="TraceWatt Home">
+          <TraceWattLogo variant="full" size="md" theme="auto" />
         </Link>
         <span>Energy intelligence. Human judgment.</span>
         <Link to="/console/health">System health ↗</Link>

@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import Landing from "./pages/Landing";
+import TraceWattLogo from "./components/TraceWattLogo";
 const ConsolePage = lazy(() => import("./pages/Console"));
 const Simulation = lazy(() => import("./pages/Simulation"));
 const LinemanDashboard = lazy(() => import("./pages/LinemanDashboard"));
@@ -13,8 +14,9 @@ export default function App() {
     <BrowserRouter>
       <Suspense
         fallback={
-          <div className="app-loading" role="status">
-            ϟ TraceWatt · Loading workspace…
+          <div className="app-loading" role="status" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <TraceWattLogo variant="mark" size="sm" />
+            <span>Loading workspace…</span>
           </div>
         }
       >
