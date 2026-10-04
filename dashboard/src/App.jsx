@@ -46,9 +46,8 @@ export default function App() {
             />
             <Route path="health" element={<ConsoleRoute name="System" />} />
             <Route path="simulation" element={<Simulation />} />
-            <Route path="evaluation" element={<ConsoleRoute name="Evaluation" />} />
           </Route>
-          {["consumers", "cases", "feeders", "alerts", "consumption", "evaluation"].map(
+          {["consumers", "cases", "feeders", "alerts", "consumption"].map(
             (path) => (
               <Route
                 key={path}

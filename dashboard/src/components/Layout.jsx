@@ -12,7 +12,6 @@ const groups = [
       ["feeders", "Feeders", "⑂"],
       ["alerts", "Alerts", "◷"],
       ["simulation", "Simulation", "⌁"],
-      ["evaluation", "Evaluation", "✓"],
     ],
   ],
   [
